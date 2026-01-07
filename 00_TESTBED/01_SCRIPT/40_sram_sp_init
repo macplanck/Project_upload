@@ -1,0 +1,17 @@
+######################################
+###        ARG PARAMETER           ###
+######################################
+in_SRAM=sram
+in_fill=2 
+in_ADDR=0
+in_LNUM=8
+in_NAME='sram_LUT'
+
+if [ -n "$1" ]; then
+    in_NAME="${1}"
+fi
+
+######################################
+###          Make Command          ###
+######################################
+make sram_sp_init SRAM=${in_SRAM}_sp_gen FILL=$in_fill ADDR=$in_ADDR LNUM=$in_LNUM NAME=$in_NAME
