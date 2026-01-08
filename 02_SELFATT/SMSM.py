@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Tuple
 import math
-import numpy as np
+import numpy as np 
 
 
 def fp16_unbiased_exponent(val_fp16: np.float16) -> int:
