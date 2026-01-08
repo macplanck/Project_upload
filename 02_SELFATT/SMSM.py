@@ -181,7 +181,7 @@ if __name__ == "__main__":
             print(f"  HW sumDnm = {newSum:.6e}, Golden sumDnm = {gSum:.6e}")
 
             # Assertion per row
-            assert abs(newSum - gSum) / gSum < 5e-3, (
+            assert abs(newSum - gSum) / gSum < 4e-3, (
                 f"DENOM MISMATCH on row {row_idx}"
             )
 
