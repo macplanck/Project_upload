@@ -61,7 +61,7 @@ class SMSM:
         """
         Perform one streaming update with one FP16 input kqed.
 
-        Flow (per your pseudocode)
+        Flow (per pseudocode)
         --------------------------
         newMax, newRslt = eval()
         self.maxExp = newMax
