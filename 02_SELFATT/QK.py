@@ -55,7 +55,7 @@ class QK:
     seqLen: int = 8192
 
     # ---- default latency ----
-    lat: int = 5
+    lat: int = 4
 
     # ---- control signals ----
     rowCnt: int = 0
