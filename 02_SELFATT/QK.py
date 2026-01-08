@@ -1,136 +1,265 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Sequence, Tuple
+from typing import Optional, Sequence
 import numpy as np
 
 
 @dataclass
-class PartialProductSim:
+class QK:
     """
-    Simulates a 32-lane FP16 MAC datapath for attention-style dot products.
-
-    Core behavior
-    -------------
-    - When q_flag==1: treat incoming 32 FP16 numbers as a Q tile and buffer it.
-    - When q_flag==0: treat incoming 32 FP16 numbers as a K tile for (row_cnt, col_cnt),
-      and if a Q tile is already buffered, output the partial dot-product for that tile.
+    QK block simulator.
 
     Model parameters
     ----------------
-    hidden_size : int
-        Total feature dimension. Must be a multiple of 32 for this simulator.
-    seq_len : int
-        Total sequence length (max row_cnt + 1).
+    hiddenSize : int
+        Total hidden size (e.g., 4096).
+    headNum : int
+        Number of heads (e.g., 32).
+    seqLen : int
+        Sequence length (e.g., 8192).
 
-    Quantization support
-    --------------------
-    If use_quant==True:
-      - Inputs are assumed to represent quantized integers encoded in fp16 containers.
-      - Dequant: x_deq = x_fp16 * scale
-    This is intentionally simple and matches common HW pipelines (scale multiply later).
+    Control signals (state)
+    -----------------------
+    rowCnt : int
+        Which row of K we are evaluating. Range: [0, seqLen-1]
+    colCnt : int
+        Which column-block within (hiddenSize/headNum) we are working on.
+        Range: [0, (hiddenSize/headNum)-1]
+    qFlag : int
+        1 means current input is Q; 0 means current input is K.
 
-    Notes
-    -----
-    - This simulator is *tile-local*: it only computes 32-wide partial sums.
-    - Accumulating across tiles to form a full dot-product is the caller's job.
+    Buffers and storage
+    -------------------
+    q_deq : np.ndarray
+        Shape (32,), dtype float16. Dequantized Q chunk.
+    k_deq : np.ndarray
+        Shape (32,), dtype float16. Dequantized K chunk.
+    accu : np.ndarray
+        Shape (hiddenSize/headNum,), dtype float16. Accumulator registers.
+
+    Cycle counter
+    -------------
+    trgCnt : int
+        Increments each call to one_operation().
+
+    Latency parameter
+    -----------------
+    lat : int
+        Default hardware latency. Stored for reference; not pipelined unless adding it.
     """
 
-    hidden_size: int = 128
-    seq_len: int = 8192
-    use_quant: bool = True
+    # ---- model parameters ----
+    hiddenSize: int = 4096
+    headNum: int = 32
+    seqLen: int = 8192
 
-    # Internal state
-    _q_buf: Optional[np.ndarray] = None
-    _q_row: Optional[int] = None
-    _q_col_base: Optional[int] = None
+    # ---- default latency ----
+    lat: int = 4
 
-    def step(
+    # ---- control signals ----
+    rowCnt: int = 0
+    colCnt: int = 0
+    qFlag: int = 1  # default assumption: start by loading Q
+
+    # ---- cycle counter ----
+    trgCnt: int = 0
+
+    # ---- internal storage ----
+    q_deq: np.ndarray = None
+    k_deq: np.ndarray = None
+    accu: np.ndarray = None
+
+    def __post_init__(self) -> None:
+        if self.hiddenSize % self.headNum != 0:
+            raise ValueError("hiddenSize must be divisible by headNum.")
+        self.cols_per_head = self.hiddenSize // self.headNum  # e.g., 128
+
+        self.q_deq = np.zeros((32,), dtype=np.float16)
+        self.k_deq = np.zeros((32,), dtype=np.float16)
+        self.accu = np.zeros((self.cols_per_head,), dtype=np.float16)
+
+        # sanitize initial control ranges
+        self.rowCnt %= self.seqLen
+        self.colCnt %= self.cols_per_head
+        self.qFlag = 1 if self.qFlag else 0
+
+    def one_operation(
         self,
-        vec32_fp16: Sequence[float] | np.ndarray,
-        *,
-        row_cnt: int,
-        col_cnt: int,
-        q_flag: int,
-        qscale: float = 1.0,
-        kscale: float = 1.0,
-    ) -> Tuple[bool, np.float32]:
+        inNum: Sequence[int],
+        dqFac: int,
+        q_flag: Optional[int] = None,
+    ) -> np.float16:
         """
-        One cycle step.
+        Perform one cycle operation.
 
         Parameters
         ----------
-        vec32_fp16 : Sequence[float] | np.ndarray
-            32 numbers representing either Q tile (if q_flag==1) or K tile (if q_flag==0).
-            Values will be cast to np.float16.
-
-        row_cnt : int
-            Which row of K (0 <= row_cnt < seq_len).
-
-        col_cnt : int
-            Which column index of K we are working on (0 <= col_cnt < hidden_size).
-            This simulator interprets col_cnt as belonging to a 32-wide tile:
-              col_base = (col_cnt // 32) * 32
-
-        q_flag : int
-            1 => incoming is Q tile to buffer
-            0 => incoming is K tile to MAC with buffered Q
-
-        qscale : float
-            Dequant scale for Q tile if use_quant==True.
-
-        kscale : float
-            Dequant scale for K tile if use_quant==True.
+        inNum : Sequence[int]
+            32 x int8 input values (quantized).
+        dqFac : int
+            5-bit integer dequant shift. Interpreted as division by 2**dqFac.
+        q_flag : Optional[int]
+            If provided, overrides internal qFlag for *this* operation only.
+            If None, uses self.qFlag.
 
         Returns
         -------
-        (out_valid, partial_product)
-          out_valid : bool
-              True only when q_flag==0 AND a Q tile was previously buffered for the same tile.
-          partial_product : np.float32
-              The 32-lane partial dot-product for that tile (0 if out_valid is False).
+        np.float16
+            The updated partial sum written into accu[colCnt].
         """
-        # ---- basic checks ----
-        if self.hidden_size % 32 != 0:
-            raise ValueError(f"hidden_size must be multiple of 32, got {self.hidden_size}")
-        if not (0 <= row_cnt < self.seq_len):
-            raise ValueError(f"row_cnt out of range: {row_cnt} (seq_len={self.seq_len})")
-        if not (0 <= col_cnt < self.hidden_size):
-            raise ValueError(f"col_cnt out of range: {col_cnt} (hidden_size={self.hidden_size})")
+        if q_flag is None:
+            q_flag_eff = self.qFlag
+        else:
+            q_flag_eff = 1 if q_flag else 0
 
-        v = np.asarray(vec32_fp16, dtype=np.float16)
-        if v.shape != (32,):
-            raise ValueError(f"vec32_fp16 must have shape (32,), got {v.shape}")
+        # Compute and write back
+        new_sum = self.eval(inNum=inNum, dqFac=dqFac, q_flag=q_flag_eff)
+        self.accu[self.colCnt] = new_sum
 
-        col_base = (col_cnt // 32) * 32
+        # Update control and cycle count
+        self.update_ctrl(q_flag=q_flag_eff)
+        self.trgCnt += 1
 
-        # ---- buffer Q tile ----
-        if q_flag == 1:
-            self._q_buf = v.copy()
-            self._q_row = row_cnt          # optional: record when Q came in
-            self._q_col_base = col_base    # bind Q tile to a specific hidden tile
-            return (False, np.float32(0.0))
+        return new_sum
 
-        # ---- compute with K tile ----
-        if q_flag == 0:
-            if self._q_buf is None:
-                # Q not ready yet
-                return (False, np.float32(0.0))
+    def eval(self, *, inNum: Sequence[int], dqFac: int, q_flag: int) -> np.float16:
+        """
+        Evaluate accu[colCnt] update given current input.
 
-            if self._q_col_base != col_base:
-                # We have a Q tile, but for a different 32-wide column tile
-                # Caller may choose to buffer correct tile first.
-                return (False, np.float32(0.0))
+        Pseudocode mapping
+        ------------------
+        deq = float16(inNum / 2**dqFac)
+        if q_flag:
+            q_deq = deq
+            sum = accu[colCnt]
+        else:
+            k_deq = deq
+            sum = sum_i(k_deq[i] * q_deq[i]) + accu[colCnt]
+        return sum
+        """
+        in_arr = np.asarray(inNum, dtype=np.int8)
+        if in_arr.shape != (32,):
+            raise ValueError(f"inNum must have shape (32,), got {in_arr.shape}.")
 
-            # Dequant (optional)
-            if self.use_quant:
-                q = (self._q_buf.astype(np.float32) * np.float32(qscale))
-                k = (v.astype(np.float32) * np.float32(kscale))
+        if not (0 <= int(dqFac) <= 31):
+            raise ValueError("dqFac must be a 5-bit integer in [0, 31].")
+
+        scale = 2.0 ** int(dqFac)
+        deq = (in_arr.astype(np.float32) / scale).astype(np.float16)
+
+        if q_flag:
+            self.q_deq = deq
+            # In Q-load cycle, output is just the current accumulator value.
+            out = np.float32(self.accu[self.colCnt])
+        else:
+            self.k_deq = deq
+            # Dot product in float32, then add previous accu[colCnt]
+            dot = np.sum(self.k_deq.astype(np.float32) * self.q_deq.astype(np.float32))
+            out = dot + np.float32(self.accu[self.colCnt])
+
+        # Store back as FP16 register behavior
+        return np.float16(out)
+
+    def update_ctrl(self, *, q_flag: int) -> None:
+        """
+        Update control signals according to pseudocode.
+
+        Pseudocode mapping
+        ------------------
+        if colCnt == (cols_per_head - 1):
+            if rowCnt == (seqLen - 1):
+                rowCnt = 0
+                colCnt = 0
+                qFlag = 1
+                accu[:] = 0
             else:
-                q = self._q_buf.astype(np.float32)
-                k = v.astype(np.float32)
+                rowCnt += 1
+                colCnt = 0
+        elif (~q_flag):
+            colCnt += 1
+        elif (q_flag):
+            qFlag = 0
+        """
+        last_col = (self.colCnt == (self.cols_per_head - 1))
+        last_row = (self.rowCnt == (self.seqLen - 1))
 
-            partial = np.dot(q, k).astype(np.float32)
-            return (True, partial)
+        if last_col:
+            if last_row:
+                self.rowCnt = 0
+                self.colCnt = 0
+                self.qFlag = 1
+                self.accu[:] = np.float16(0.0)
+            else:
+                self.rowCnt += 1
+                self.colCnt = 0
+                # Keep qFlag as-is unless design wants to reload Q each row.
+        elif q_flag == 0:
+            self.colCnt += 1
+        else:
+            # q_flag == 1: after loading Q once, switch to K phase
+            self.qFlag = 0
 
-        raise ValueError(f"q_flag must be 0 or 1, got {q_flag}")
+if __name__ == "__main__":
+    np.set_printoptions(precision=4, suppress=True)
+
+    print("=== QK Sanity Test ===")
+
+    # Instantiate QK
+    qk = QK()
+
+    # -----------------------------
+    # Test vectors
+    # -----------------------------
+    Q_in = np.ones(32, dtype=np.int8)        # Q = [1, 1, ..., 1]
+    K_in = np.full(32, 2, dtype=np.int8)     # K = [2, 2, ..., 2]
+    dqFac = 0                                # no scaling
+
+    # -----------------------------
+    # Cycle 0: Q phase
+    # -----------------------------
+    print("\n[Cycle 0] Q phase")
+    out0 = qk.one_operation(Q_in, dqFac)
+
+    print(f"out        = {out0}")
+    print(f"qFlag      = {qk.qFlag}")
+    print(f"rowCnt     = {qk.rowCnt}")
+    print(f"colCnt     = {qk.colCnt}")
+    print(f"trgCnt     = {qk.trgCnt}")
+
+    # Checks
+    assert out0 == 0.0, "Accumulator should not change during Q phase"
+    assert qk.qFlag == 0, "qFlag should flip low after Q load"
+    assert qk.colCnt == 0, "colCnt should not advance during Q phase"
+
+    # -----------------------------
+    # Cycle 1: K phase
+    # -----------------------------
+    print("\n[Cycle 1] K phase")
+    out1 = qk.one_operation(K_in, dqFac)
+
+    expected_dot = 32 * 2  # sum(Q * K)
+    print(f"out        = {out1}")
+    print(f"expected   = {expected_dot}")
+    print(f"qFlag      = {qk.qFlag}")
+    print(f"rowCnt     = {qk.rowCnt}")
+    print(f"colCnt     = {qk.colCnt}")
+    print(f"trgCnt     = {qk.trgCnt}")
+
+    # Checks
+    assert np.isclose(out1, expected_dot), "Dot product incorrect"
+    assert qk.colCnt == 1, "colCnt should increment during K phase"
+    assert qk.trgCnt == 2, "trgCnt should increment every cycle"
+
+    # -----------------------------
+    # Additional K cycles
+    # -----------------------------
+    print("\n[Additional K cycles]")
+    for i in range(2, 6):
+        out = qk.one_operation(K_in, dqFac)
+        print(f"Cycle {i}: out={out}, colCnt={qk.colCnt}")
+
+    # -----------------------------
+    # Summary
+    # -----------------------------
+    print("\n=== Test PASSED ===")
