@@ -146,17 +146,17 @@ class QK:
             raise ValueError("dqFac must be a 5-bit integer in [0, 31].")
 
         scale = 2.0 ** int(dqFac)
-        deq = (in_arr.astype(np.float32) / scale).astype(np.float16)
+        deq = (in_arr.astype(np.float16) / scale).astype(np.float16)
 
         if q_flag:
             self.q_deq = deq
             # In Q-load cycle, output is just the current accumulator value.
-            out = np.float32(self.accu[self.colCnt])
+            out = np.float16(self.accu[self.colCnt])
         else:
             self.k_deq = deq
             # Dot product in float32, then add previous accu[colCnt]
-            dot = np.sum(self.k_deq.astype(np.float32) * self.q_deq.astype(np.float32))
-            out = dot + np.float32(self.accu[self.colCnt])
+            dot = np.sum(self.k_deq.astype(np.float16) * self.q_deq.astype(np.float16))
+            out = dot + np.float16(self.accu[self.colCnt])
 
         # Store back as FP16 register behavior
         return np.float16(out)

@@ -72,7 +72,7 @@ class SMSM:
         """
         self.kqed = np.float16(kqed)
 
-        newMax, newRslt = self.eval()
+        newMax, newRslt, newExped = self.eval()
 
         self.maxExp = newMax
         self.sumDnm = newRslt
@@ -80,7 +80,7 @@ class SMSM:
         self.update_ctrl()
         self.trgCnt += 1
 
-        return newMax, newRslt
+        return newMax, newRslt, newExped
 
     def eval(self) -> Tuple[int, float]:
         """
@@ -118,7 +118,7 @@ class SMSM:
             newRslt = self.sumDnm + scaled_contrib
             newMax = self.maxExp
 
-        return int(newMax), float(newRslt)
+        return int(newMax), float(newRslt), exped_fp16
 
     def update_ctrl(self) -> None:
         """
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         # Run SMSM row by row
         for row_idx, row_inputs in enumerate(all_rows):
             for kqed in row_inputs:
-                newMax, newSum = smsm.one_operation(kqed)
+                newMax, newSum, _ = smsm.one_operation(kqed)
 
             # Golden for this row
             gMax, gSum = golden_softmax_denom(row_inputs)
