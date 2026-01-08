@@ -46,7 +46,7 @@ class QK:
     Latency parameter
     -----------------
     lat : int
-        Default hardware latency. Stored for reference; not pipelined unless you add it.
+        Default hardware latency. Stored for reference; not pipelined unless adding it.
     """
 
     # ---- model parameters ----
@@ -193,8 +193,7 @@ class QK:
             else:
                 self.rowCnt += 1
                 self.colCnt = 0
-                # Keep qFlag as-is unless your design wants to reload Q each row.
-                # Your pseudocode does not explicitly set qFlag here.
+                # Keep qFlag as-is unless design wants to reload Q each row.
         elif q_flag == 0:
             self.colCnt += 1
         else:
