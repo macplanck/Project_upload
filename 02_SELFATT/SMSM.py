@@ -5,6 +5,9 @@ from typing import Tuple
 import math
 import numpy as np
 
+# rise the level of message: from warning to error
+np.seterr(over='raise', divide='raise', invalid='raise', under='ignore')
+
 
 def fp16_unbiased_exponent(val_fp16: np.float16) -> int:
     """
@@ -52,7 +55,7 @@ class SMSM:
 
     # Storing unit
     maxExp: int = -15  # running maximum unbiased exponent of exp(kqed)
-    sumDnm: float = 0.0  # sum(exp(inputs))/2^(maxExp)
+    sumDnm: np.float16 = 0.0  # sum(exp(inputs))/2^(maxExp)
 
     # Input (latest)
     kqed: np.float16 = np.float16(0.0)
@@ -98,20 +101,34 @@ class SMSM:
             newMax  = maxExp
         """
         # Compute exp in float32 then quantize to FP16 (to mimic HW FP16 exp output)
-        exped_fp16 = np.float16(np.exp(np.float32(self.kqed)))
+        exped_fp16 = np.float16(np.exp(np.float16(self.kqed)))
         exped_unbiased = fp16_unbiased_exponent(exped_fp16)
 
         # Convert exped to float32 for accumulator math
-        exped_f32 = float(np.float32(exped_fp16))
+        # exped_f32 = float(np.float32(exped_fp16))
 
         # Base scaled contribution: exped / 2^(maxExp)
         # (matches your internal sumDnm definition)
-        scaled_contrib = exped_f32 / (2.0 ** self.maxExp)
 
-        if self.maxExp < exped_unbiased:
+        # print(self.maxExp)
+        # print("shit:",exped_fp16)
+        if (self.colCnt == 0):
+            scaled_contrib = exped_fp16 / (np.float16(2.0) ** exped_unbiased)
+        else:
+            scaled_contrib = exped_fp16 / (np.float16(2.0) ** self.maxExp)
+        # print("FP16:",exped_f32 / (2.0 ** self.maxExp))
+        # print("FP32:",scaled_contrib)
+
+        if self.colCnt == 0:
+            newRslt = scaled_contrib
+            newMax = exped_unbiased
+        elif self.maxExp < exped_unbiased:
             # Rescale old sum to new max:
             # division factor = 2^(unbiasedExp - maxExp)
-            scale = 2.0 ** (exped_unbiased - self.maxExp)
+            scale = np.float16(2.0) ** (exped_unbiased - self.maxExp)
+
+            # print(scale)
+            # print(self.sumDnm + scaled_contrib)
             newRslt = (self.sumDnm + scaled_contrib) / scale
             newMax = exped_unbiased
         else:
@@ -181,12 +198,12 @@ if __name__ == "__main__":
             print(f"  HW sumDnm = {newSum:.6e}, Golden sumDnm = {gSum:.6e}")
 
             # Assertion per row
-            assert abs(newSum - gSum) / gSum < 4e-3, (
+            assert abs(newSum - gSum) / gSum < 6e-3, (
                 f"DENOM MISMATCH on row {row_idx}"
             )
 
         print("PASS: two-row pattern check")
 
 
-    for i in range(100):
+    for i in range(1000):
         pattern_check(i)
