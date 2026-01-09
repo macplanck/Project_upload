@@ -155,7 +155,7 @@ class QK:
         else:
             self.k_deq = deq
             # Dot product in float32, then add previous accu[colCnt]
-            dot = np.sum(self.k_deq.astype(np.float16) * self.q_deq.astype(np.float16))
+            dot = np.float16(np.sum(self.k_deq.astype(np.float16) * self.q_deq.astype(np.float16)))
             out = dot + np.float16(self.accu[self.colCnt])
 
         # Store back as FP16 register behavior
