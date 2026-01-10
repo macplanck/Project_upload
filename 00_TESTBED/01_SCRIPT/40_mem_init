@@ -1,7 +1,15 @@
 ######################################
 ###        ARG PARAMETER           ###
 ######################################
-in_SRAM=sram_LUT
+in_MEM=dram
+in_fill=1
+in_XLEN=32
+in_YLEN=32
+in_LNUM=8
+in_NAME='dram_LUT'
+
+in_XLEN=32
+in_YLEN=32
 
 if [ -n "$1" ]; then
     in_NAME="${1}"
@@ -10,4 +18,4 @@ fi
 ######################################
 ###          Make Command          ###
 ######################################
-make sram_sp_test SRAM=${in_SRAM}_sp
+make mem_init MEM=${in_MEM}_gen FILL=$in_fill XLEN=$in_XLEN YLEN=$in_YLEN LNUM=$in_LNUM NAME=$in_NAME
