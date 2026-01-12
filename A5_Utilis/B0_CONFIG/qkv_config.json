@@ -1,0 +1,6 @@
+{
+    "token_size": 8,
+    "LUT_NUM": 8,
+    "hidden_size": 4096,
+    "seq_length":  8192
+}
