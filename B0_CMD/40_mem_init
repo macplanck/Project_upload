@@ -1,0 +1,21 @@
+######################################
+###        ARG PARAMETER           ###
+######################################
+in_MEM=dram
+in_fill=3 
+in_XLEN=4096
+in_YLEN=8192
+in_LNUM=8
+in_NAME='dram_token'
+
+in_XLEN=32
+in_YLEN=32
+
+if [ -n "$1" ]; then
+    in_NAME="${1}"
+fi
+
+######################################
+###          Make Command          ###
+######################################
+make mem_init MEM=${in_MEM}_gen FILL=$in_fill XLEN=$in_XLEN YLEN=$in_YLEN LNUM=$in_LNUM NAME=$in_NAME
