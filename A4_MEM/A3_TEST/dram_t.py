@@ -1,11 +1,11 @@
 from pathlib import Path
-from A5_Utilis.A0_CONFIG.read_config import read_config
+from A5_Utilis.B0_CONFIG.read_config import read_config
 
 ###################################################
 ###            GLOBAL PARAMETERS                ###
 ###################################################
 BASE = Path(__file__).resolve().parent
-PATH_CONF = (BASE / "../A3_TEST/test_config.json")
+PATH_CONF = (BASE / "../A3_TEST/config_test.json")
 PATH_INIT = (BASE / "../A1_INIT")
 PATH_OUT  = (BASE / "../A2_OUT")
 

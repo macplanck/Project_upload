@@ -5,7 +5,7 @@ from A5_Utilis.B0_CONFIG.read_config import read_config
 ###            GLOBAL PARAMETERS                ###
 ###################################################
 BASE = Path(__file__).resolve().parent
-PATH_CONF = (BASE / "../../A5_Utilis/B0_CONFIG/mem_config.json")
+PATH_CONF = (BASE / "../../A5_Utilis/B0_CONFIG/config_mem.json")
 PATH_INIT = (BASE / "../A1_INIT")
 PATH_OUT  = (BASE / "../A2_OUT")
 

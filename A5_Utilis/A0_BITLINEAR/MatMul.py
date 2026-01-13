@@ -2,8 +2,8 @@ import numpy as np
 from pathlib import Path
 
 from A4_MEM.A0_MEM.sram import sram_sp
-from A5_Utilis.B0_CONFIG.read_config import read_config
-from A5_Utilis.B1_FP16.fp16_parts import f16_parts
+from A5_Utilis.B1_FP16.fp16_parts import f16_exp
+from A5_Utilis.B0_CONFIG.global_param import param
 
 ###################################################
 ###            GLOBAL PARAMETERS                ###
@@ -16,15 +16,22 @@ PATH_OUT  = (BASE / "../A2_OUT")
 ###################################################
 ###              TEST FUNCTIONs                 ###
 ###################################################
-def Bit_operation(element, sum_sqrt, max):
+def scale(sum_sqrt, max):
 
-    # Normalization
-    scale = (hidden_size ** 0.5)  / sum_sqrt
-    element *= scale; max *= scale
+    # NORM Scale
+    norm_scale = (param.hidden_size ** 0.5)  / sum_sqrt
 
-    # Quantization
-    sum_sqrt 
-    
+    # MAX Scale
+    scale_exp, fp_kind = f16_exp(norm_scale)
+    max += (param.token_size // 2 - scale_exp) 
+    max_scale = 2 ** max
+
+    return norm_scale, max_scale
+
+def Bit_operation(element, sum_scale, max_scale):
+    element *= sum_scale        # Normalization
+    element *= max_scale        # Quantization
+    return element
 
 def vec_product(token, weight):
 
@@ -42,11 +49,6 @@ def vec_product(token, weight):
 ###                TEST Program                 ###
 ###################################################
 if __name__ == '__main__':
-
-    # read config
-    bit_config = read_config
-
-    hidden_size = bit_config["hidden_size"]
 
     # vec product
     vec_product([1, 1, 1, 1, 1, 1, 1, 1], 300)

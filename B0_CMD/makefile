@@ -16,7 +16,7 @@ path_mem = A4_MEM/A0_MEM
 ######################################
 
 #---------- Bitlinear ------------
-MAT_MUL = python3 -m A1_QKV.A0_BITLINEAR.${FILE}
+MAT_MUL = python3 -m A5_Utilis.A0_BITLINEAR.${FILE}
 
 #-------------- MEM --------------
 MEM_INIT = python3 -m A4_MEM.A1_INIT.${MEM} \
@@ -38,7 +38,7 @@ LUT_INIT = python3 -m A4_MEM.A1_INIT.${LUT} \
 # Make Command
 ######################################
 
-#---------- Bitlinear ------------
+#------------ Utilis -------------
 mat_mul:
 	cd ..  &&  ${MAT_MUL}
 
