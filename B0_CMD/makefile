@@ -27,7 +27,7 @@ MEM_INIT = python3 -m A4_MEM.A1_INIT.${MEM} \
 	--name ${NAME}
 
 MEM_TEST = python3 -m A4_MEM.A0_MEM.${MEM}
-MEM_FUNC = python3 -m A4_MEM.A3_TEST.${MEM}
+MEM_FUNC = python3 -m A4_MEM.A3_TEST.${MEM} --test ${TEST}
 
 LUT_INIT = python3 -m A4_MEM.A1_INIT.${LUT} \
 	--LNUM ${LNUM} \

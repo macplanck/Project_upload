@@ -1,20 +1,19 @@
+###################################################
+###             BITLINEAR LUT                   ###
+###################################################
 from pathlib import Path
 
 from A5_Utilis.B0_CONFIG.read_config import read_config
 from A4_MEM.A1_INIT.LUT import LUT
 
-BASE = Path(__file__).resolve().parent
-PATH_CONF = (BASE / "../../A5_Utilis/B0_CONFIG/config_sram.json")
+# import B01_INIT.LUT
 
-###################################################
-###                  SRAMs                      ###
-###################################################
+BASE = Path(__file__).resolve().parent
+PATH_CONF = (BASE / "config_sram_test.json")
+
 sram_sp = { "LUT": LUT }
 sram_dp = {}
 
-###################################################
-###                 Functions                   ###
-###################################################
 
 def array_init(config_in):
 
@@ -48,5 +47,14 @@ def sram_init():
 ###                MAIN CALLs                   ###
 ###################################################
 sram_init()
+
+###################################################
+###                TEST Program                 ###
+###################################################
+if __name__ == '__main__':
+    print("Hello")
+
+
+
 
 

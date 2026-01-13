@@ -5,7 +5,7 @@ from A5_Utilis.B0_CONFIG.read_config import read_config
 ###            GLOBAL PARAMETERS                ###
 ###################################################
 BASE = Path(__file__).resolve().parent
-PATH_CONF = (BASE / "../../A5_Utilis/B0_CONFIG/config_mem.json")
+PATH_CONF = (BASE / "../../A5_Utilis/B0_CONFIG/config_dram.json")
 PATH_INIT = (BASE / "../A1_INIT")
 PATH_OUT  = (BASE / "../A2_OUT")
 
@@ -112,26 +112,27 @@ class DRAM:
 
         return sram_out.copy()
 
+###################################################
+###             GLOBAL Functions                ###
+###################################################
+def dram_init():
+
+    global dram; dram = {}
+    mem_config = read_config(PATH_CONF)
+
+    for item in mem_config:
+        dram[item] = DRAM(mem_config[item], item)
+    
+###################################################
+###                MAIN CALLs                   ###
+###################################################
+dram_init()
 
 ###################################################
 ###                TEST Program                 ###
 ###################################################
 if __name__ == '__main__':
-
-    mem_config = read_config(PATH_CONF)
-    test_DRAM_token = DRAM(mem_config["token"], "token")
-    test_DRAM_token.peak_mem()
-
-    test_sram = [[ 2, 2, 2, 2 ], [3, 3, 3, 3]]
-
-    test_DRAM_token.store_mem((1, 1), test_sram)
-    test_DRAM_token.peak_mem(file=f"{PATH_OUT}/debug_{test_DRAM_token.name}.csv", info='STORE')
-
-    test_sram = test_DRAM_token.load_mem((1, 2), 4)
-    print(test_sram)
-
-    test_sram = [ 2, 2, 2, 2 ]
-    test_DRAM_token.store_mem((1, 1), test_sram)
-    test_DRAM_token.peak_mem(file=f"{PATH_OUT}/debug_{test_DRAM_token.name}.csv", info='STORE')
+    for item in dram:
+        dram[item].peak_mem()
 
 

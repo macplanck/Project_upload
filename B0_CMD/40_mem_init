@@ -2,11 +2,11 @@
 ###        ARG PARAMETER           ###
 ######################################
 in_MEM=dram
-in_fill=3 
-in_XLEN=4096
-in_YLEN=8192
+in_fill=2 
+in_XLEN=8192
+in_YLEN=4096
 in_LNUM=8
-in_NAME='dram_token'
+in_NAME='dram_weight'
 
 in_XLEN=32
 in_YLEN=32

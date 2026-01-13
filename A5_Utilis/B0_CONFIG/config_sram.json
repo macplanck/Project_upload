@@ -1,0 +1,22 @@
+{
+    "sram_sp": {
+
+        "token": {
+            "sram_X": 32,
+            "sram_Y": 32
+        },
+
+        "weight": {
+            "sram_X": 32,
+            "sram_Y": 32
+        }
+
+    },
+
+    "sram_dp": {
+        "FIFO": {
+            "sram_X": 32
+        }
+    }
+    
+}
