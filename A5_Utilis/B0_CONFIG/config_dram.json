@@ -1,10 +1,16 @@
 {
     "weight": {
         "dram_X": 4096,
-        "dram_Y": 512
+        "dram_Y": 512,
+        "type": "int",
+        "sign": "unsign",
+        "range": 6561
     },
     "token": {
         "dram_X": 8192,
-        "dram_Y": 4096
+        "dram_Y": 4096,
+        "type": "int",
+        "sign": "signed",
+        "range": 256
     }
 }

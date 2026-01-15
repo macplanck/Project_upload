@@ -1,21 +1,38 @@
 {
+    "LUT": {
+
+        "LUT": {
+            "LUT_num": 8
+        }
+
+    },
+
     "sram_sp": {
 
         "token": {
             "sram_X": 32,
-            "sram_Y": 32
+            "sram_Y": 32,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0
         },
 
         "weight": {
             "sram_X": 32,
-            "sram_Y": 32
+            "sram_Y": 32,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0
         }
 
     },
 
     "sram_dp": {
         "FIFO": {
-            "sram_X": 32
+            "sram_X": 32,
+            "type": "int",
+            "sign": "float",
+            "range": 0
         }
     }
     

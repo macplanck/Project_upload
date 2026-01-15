@@ -19,3 +19,4 @@ Root --- A5_Utilis --- B0_CONFIG --- config_mem.json
 > **How to get Parameters**
 > - Import as following script: `from A5_Utilis.B0_CONFIG.global_param import param`
 > - Get your Global Parameters by `param.your_parameter`: **eg.** `param.hidden_size`
+    
