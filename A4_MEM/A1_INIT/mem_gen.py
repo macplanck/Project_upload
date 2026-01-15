@@ -31,11 +31,11 @@ LUT_NUM = 8
 ###               FILL FUNCTIONs                ###
 ###################################################
 
-def fill():
+def fill_2D():
 
     for div in range(DIV):
 
-        print(f"Generating token data to \'{PATH_INIT}/{mem_type}_{mem_name}_V{div}.init\' ...")
+        print(f"Generating 2D data to \'{PATH_INIT}/{mem_type}_{mem_name}_V{div}.init\' ...")
 
         with open(f"{PATH_INIT}/{mem_type}_{mem_name}_V{div}.init", 'w') as f:
             C_WIDTH = X_WIDTH // DIV
@@ -71,6 +71,32 @@ def fill():
                     f.write(f"]]\n")
                 else:
                     f.write(f"],\n")
+
+def fill_1D():
+
+    print(f"Generating 1D data to \'{PATH_INIT}/{mem_type}_{mem_name}.init\' ...")
+
+    with open(f"{PATH_INIT}/{mem_type}_{mem_name}.init", 'w') as f:
+
+        for i in range(X_WIDTH):
+            if i == 0:
+                f.write(f"{mem_type}[\'{mem_name}\'] = [")
+
+            if RANGE:
+                rand = random.uniform(0, RANGE)
+            else:
+                rand = 0
+            if SIGN:
+                rand = rand - RANGE / 2
+            if TYPE:
+                f.write(f"{int(rand):4d}")
+            else:
+                f.write(f"{rand:4.2f}")
+
+            if i < X_WIDTH - 1:
+                f.write(",")
+            else:
+                f.write("]\n")
 
 def fill_LUT():
     
@@ -113,14 +139,18 @@ if __name__ == '__main__':
 
     for item in dram_config:
         X_WIDTH = dram_config[item]["dram_X"]
-        if "dram_Y" in dram_config[item]:
-            Y_WIDTH = dram_config[item]["dram_Y"]
+
         RANGE = dram_config[item]["range"]
         SIGN = dram_config[item]["sign"] == "signed"
         TYPE = dram_config[item]["type"] == "int"
         mem_name = f"{item}"
         mem_type = "dram"
-        fill()
+
+        if "dram_Y" in dram_config[item]:
+            Y_WIDTH = dram_config[item]["dram_Y"]
+            fill_2D()
+        else:
+            fill_1D()
 
     sram_config = read_config(PATH_SRAM)
     mem_type = "sram_sp"
@@ -133,22 +163,25 @@ if __name__ == '__main__':
 
     for item in sram_config["sram_sp"]:
         X_WIDTH = sram_config["sram_sp"][item]["sram_X"]
-        if "sram_Y" in sram_config["sram_sp"][item]:
-            Y_WIDTH = sram_config["sram_sp"][item]["sram_Y"]
-        Y_WIDTH = sram_config["sram_sp"][item]["sram_Y"]
         RANGE = sram_config["sram_sp"][item]["range"]
         SIGN = sram_config["sram_sp"][item]["sign"] == "signed"
         TYPE = sram_config["sram_sp"][item]["type"] == "int"
         mem_name = f"{item}"
-        fill()
+        if "sram_Y" in sram_config["sram_sp"][item]:
+            Y_WIDTH = sram_config["sram_sp"][item]["sram_Y"]
+            fill_2D()
+        else:
+            fill_1D()
 
     mem_type = "sram_dp"
     for item in sram_config["sram_dp"]:
         X_WIDTH = sram_config["sram_dp"][item]["sram_X"]
-        if "sram_Y" in sram_config["sram_dp"][item]:
-            Y_WIDTH = sram_config["sram_dp"][item]["sram_Y"]
         RANGE = sram_config["sram_dp"][item]["range"]
         SIGN = sram_config["sram_dp"][item]["sign"] == "signed"
         TYPE = sram_config["sram_dp"][item]["type"] == "int"
         mem_name = f"{item}"
-        fill()
+        if "sram_Y" in sram_config["sram_dp"][item]:
+            Y_WIDTH = sram_config["sram_dp"][item]["sram_Y"]
+            fill_2D()
+        else:
+            fill_1D()
