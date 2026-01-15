@@ -44,7 +44,7 @@ def fill_2D():
                 C_WIDTH += X_WIDTH % DIV
 
             if div == 0:
-                f.write(f"{mem_type}[\'{mem_name}\'] = [")
+                f.write(f"{mem_type}_t[\'{mem_name}\'] = [")
 
             for i in range(C_WIDTH):
                 for j in range(Y_WIDTH):
@@ -80,7 +80,7 @@ def fill_1D():
 
         for i in range(X_WIDTH):
             if i == 0:
-                f.write(f"{mem_type}[\'{mem_name}\'] = [")
+                f.write(f"{mem_type}_t[\'{mem_name}\'] = [")
 
             if RANGE:
                 rand = random.uniform(0, RANGE)
@@ -109,7 +109,7 @@ def fill_LUT():
 
     with open(f"{PATH_INIT}/{mem_type}_{mem_name}.init", 'w') as f:
 
-        f.write(f"{mem_type}[\'{mem_name}\'] = [")
+        f.write(f"{mem_type}_t[\'{mem_name}\'] = [")
 
         for i in range(LUT_WIDTH):
             f.write(f"["); element = i

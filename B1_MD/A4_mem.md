@@ -24,23 +24,17 @@
 
 
 ## Preparation Before Using MEM
-1. **STEP 1**: Combine MEM FILES
+- Combine MEM FILES
 ```
   ./40_mem_combine
 ```
-2. **STEP 2**: link `sram.py` from `A4_MEM/A1_INIT/` to `A4_MEM/A0_MEM/`
+- CHECK if FILEs are generated in `A4_MEM/A1_INIT/`
 ```
-  cd ~/A4_MEM/A0_MEM/
-  ln -s ../A1_INIT/sram.py
+  dram.py
+  sram.py
 ```
 
 ## Import MEMs into Desire FILE
-- CHECK if FILE exist in `A4_MEM/A0_MEM/`
-```
-  dram.py
-  sram.py       # link from A4_MEM/A1_INIT/
-```
-
 - **DRAM**
 ```
   from A4_MEM.A0_MEM.dram import dram

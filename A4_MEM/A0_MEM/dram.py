@@ -1,6 +1,6 @@
 from pathlib import Path
 from A5_Utilis.B0_CONFIG.read_config import read_config
-from A4_MEM.A1_INIT.dram import dram
+from A4_MEM.A1_INIT.dram import dram_t
 
 ###################################################
 ###            GLOBAL PARAMETERS                ###
@@ -20,7 +20,7 @@ class DRAM:
         self.file_init  = ( PATH_INIT / f"dram_{name}.csv" )
         self.file_out   = ( PATH_OUT  / f"dram_{name}.csv" )
         # self.file_deb   = ( PATH_DEB  / f"dram_{name}.csv" )
-        self.memory = dram[f'{name}']
+        self.memory = dram_t[f'{name}']
         self.name = name
 
     def peak_mem(self, start=None, end=None, file=None, info='PEAK'):
