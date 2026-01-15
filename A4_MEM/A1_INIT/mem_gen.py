@@ -111,16 +111,16 @@ if __name__ == '__main__':
     dram_config = read_config(PATH_DRAM)
     mem_type = "dram"
 
-    # for item in dram_config:
-    #     X_WIDTH = dram_config[item]["dram_X"]
-    #     if "dram_Y" in dram_config[item]:
-    #         Y_WIDTH = dram_config[item]["dram_Y"]
-    #     RANGE = dram_config[item]["range"]
-    #     SIGN = dram_config[item]["sign"] == "signed"
-    #     TYPE = dram_config[item]["type"] == "int"
-    #     mem_name = f"{item}"
-    #     mem_type = "dram"
-    #     fill()
+    for item in dram_config:
+        X_WIDTH = dram_config[item]["dram_X"]
+        if "dram_Y" in dram_config[item]:
+            Y_WIDTH = dram_config[item]["dram_Y"]
+        RANGE = dram_config[item]["range"]
+        SIGN = dram_config[item]["sign"] == "signed"
+        TYPE = dram_config[item]["type"] == "int"
+        mem_name = f"{item}"
+        mem_type = "dram"
+        fill()
 
     sram_config = read_config(PATH_SRAM)
     mem_type = "sram_sp"
