@@ -68,14 +68,14 @@ def fill_SRAM():
         else:
             f.write(f"\n{SRAM_name} = ")
             lst = gen_row(SRAM_x, dtype=SRAM_dtype)
-            f.write(f"{lst}")
+            f.write(f"{lst}\n")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='sram generate') 
     parser.add_argument('--x',    default= 4096,   type=int, help="the first dimension of the sram list")
     parser.add_argument('--y',    default= 1,  type=int, help="the second dimension of hte sram list")
-    parser.add_argument('--name', default= 'Q_deq',  type=str)
+    parser.add_argument('--name', default= 'V_deq',  type=str)
     parser.add_argument('--dtype', default= 'int',  type=str)
 
     arg = parser.parse_args()
@@ -86,4 +86,3 @@ if __name__ == '__main__':
     PATH_INIT = (BASE / f"sram.py")
 
     fill_SRAM()
-    
