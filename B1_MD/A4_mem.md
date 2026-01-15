@@ -47,7 +47,7 @@
 ```
 - **SRAM**
 ```
-  from A4_MEM.A0_MEM.sram import sram
+  from A4_MEM.A0_MEM.sram import sram_sp sram_dp
 ```
 
 ## Before Uploading to GitHub
