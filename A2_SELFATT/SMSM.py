@@ -1,14 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-<<<<<<< HEAD
 from typing import Tuple
-import math
 import numpy as np 
-=======
-from typing import Tuple, List
-import numpy as np
->>>>>>> orgin/main
 
 
 # ============================================================
