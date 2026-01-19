@@ -1,0 +1,23 @@
+######################################
+###        ARG PARAMETER           ###
+######################################
+in_MEM=mem
+in_XLEN=8192
+in_YLEN=4096
+in_NAME='dram_weight'
+in_TYPE='float'
+in_SIGN=0                         # 1 signed / 0 unsigned
+in_RANGE=256
+in_BIAS=0
+
+# in_XLEN=32
+# in_YLEN=32
+
+# if [ -n "$1" ]; then
+#     in_NAME="${1}"
+# fi
+
+######################################
+###          Make Command          ###
+######################################
+make mem_init MEM=${in_MEM}_gen XLEN=$in_XLEN YLEN=$in_YLEN TYPE=$in_TYPE SIGN=$in_SIGN NAME=$in_NAME RANGE=$in_RANGE BIAS = $in_BIAS

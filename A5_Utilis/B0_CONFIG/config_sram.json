@@ -1,0 +1,125 @@
+{
+    "LUT": {
+
+        "LUT": {
+            "LUT_num": 8
+        }
+
+    },
+
+    "sram_sp": {
+
+        "token": {
+            "sram_X": 32,
+            "sram_Y": 32,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+
+        "weight": {
+            "sram_X": 32,
+            "sram_Y": 32,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+
+        "smExpedWd": {
+            "sram_X": 64,
+            "type": "float",
+            "sign": "signed",
+            "range": 6,
+            "bias": 0
+        },
+
+        "smExpedRd": {
+            "sram_X": 64,
+            "type": "float",
+            "sign": "signed",
+            "range": 6,
+            "bias": 0
+        },
+        
+        "chunkK": {
+            "sram_X": 128,
+            "sram_Y": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "chunkQ": {
+            "sram_X": 128,
+            "sram_Y": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "chunkV": {
+            "sram_X": 128,
+            "sram_Y": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "deqK": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 4
+        },
+
+        "deqQ": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 4
+        },
+
+        "deqV": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 4
+        },
+
+        "smSum": {
+            "sram_X": 64,
+            "type": "float",
+            "sign": "signed",
+            "range": 4,
+            "bias": 5
+        },
+
+        "smMax": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 2,
+            "bias": 3
+        }
+
+    },
+
+    "sram_dp": {
+        "FIFO": {
+            "sram_X": 32,
+            "type": "int",
+            "sign": "unsigned",
+            "range": 0,
+            "bias": 0
+        }
+    }
+
+}

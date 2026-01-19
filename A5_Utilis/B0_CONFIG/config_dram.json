@@ -1,0 +1,50 @@
+{
+    "weight": {
+        "dram_X": 4096,
+        "dram_Y": 512,
+        "type": "int",
+        "sign": "unsign",
+        "range": 6561,
+        "bias": 0
+    },
+    "token": {
+        "dram_X": 8192,
+        "dram_Y": 4096,
+        "type": "int",
+        "sign": "signed",
+        "range": 256,
+        "bias": 0
+    },
+    "smExped": {
+        "dram_X": 64,
+        "dram_Y": 64,
+        "type": "float",
+        "sign": "signed",
+        "range": 4,
+        "bias": 0
+    },
+    "quanK": {
+        "dram_X": 4096,
+        "dram_Y": 64,
+        "type": "int",
+        "sign": "signed",
+        "range": 3,
+        "bias": 0
+    },
+    "quanQ": {
+        "dram_X": 4096,
+        "dram_Y": 64,
+        "type": "int",
+        "sign": "signed",
+        "range": 3,
+        "bias": 0
+    },
+    "quanV": {
+        "dram_X": 4096,
+        "dram_Y": 64,
+        "type": "int",
+        "sign": "signed",
+        "range": 3,
+        "bias": 0
+    }
+}

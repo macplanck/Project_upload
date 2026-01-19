@@ -1,4 +1,4 @@
-.PHONY: mat_mul mem_init mem_test mem_func LUT_init 
+.PHONY: mat_mul mem_combine mem_clean mem_init mem_test mem_zip mem_func LUT_init 
 
 ######################################
 # Set your desired file names
@@ -16,18 +16,28 @@ path_mem = A4_MEM/A0_MEM
 ######################################
 
 #---------- Bitlinear ------------
-MAT_MUL = python3 -m A1_QKV.A0_BITLINEAR.${FILE}
+MAT_MUL = python3 -m A5_Utilis.A0_BITLINEAR.${FILE}
 
 #-------------- MEM --------------
+# DRAM_COMB = type A4_MEM/A1_INIT/dram.def A4_MEM/A1_INIT/dram_*.init > A4_MEM/A1_INIT/dram.py
+# SRAM_COMB = type A4_MEM/A1_INIT/sram.def A4_MEM/A1_INIT/sram_*.init > A4_MEM/A1_INIT/sram.py
+
+DRAM_COMB = powershell -Command "Get-Content A4_MEM/A1_INIT/dram.def, A4_MEM/A1_INIT/dram_*.init | Set-Content A4_MEM/A1_INIT/dram.py"
+SRAM_COMB = powershell -Command "Get-Content A4_MEM/A1_INIT/sram.def, A4_MEM/A1_INIT/sram_*.init | Set-Content A4_MEM/A1_INIT/sram.py"
+
+MEM_CLEAN = rm -rf A4_MEM/A1_INIT/dram.py A4_MEM/A1_INIT/sram.py
+
 MEM_INIT = python3 -m A4_MEM.A1_INIT.${MEM} \
-	--fill ${FILL} \
-	--XLEN ${XLEN} \
-	--YLEN ${YLEN} \
-	--LNUM ${LNUM} \
-	--name ${NAME}
+	--XLEN  ${XLEN}  \
+	--YLEN  ${YLEN}  \
+	--type  ${TYPE}  \
+	--sign  ${SIGN}  \
+	--name  ${NAME}  \
+	--range ${RANGE} \
+	--bias  ${BIAS}
 
 MEM_TEST = python3 -m A4_MEM.A0_MEM.${MEM}
-MEM_FUNC = python3 -m A4_MEM.A3_TEST.${MEM}
+MEM_FUNC = python3 -m A4_MEM.A3_TEST.${MEM} --test ${TEST}
 
 LUT_INIT = python3 -m A4_MEM.A1_INIT.${LUT} \
 	--LNUM ${LNUM} \
@@ -38,11 +48,16 @@ LUT_INIT = python3 -m A4_MEM.A1_INIT.${LUT} \
 # Make Command
 ######################################
 
-#---------- Bitlinear ------------
-mat_mul:
-	cd ..  &&  ${MAT_MUL}
+#------------ Utilis -------------
+# mat_mul:
+# 	cd ..  &&  ${MAT_MUL}
 
 #-------------- MEM --------------
+mem_combine:
+	cd ..  &&  ${DRAM_COMB}
+	cd ..  &&  ${SRAM_COMB}
+mem_clean:
+	cd ..  &&  ${MEM_CLEAN}
 mem_init:
 	cd ..  &&  ${MEM_INIT}
 mem_test:

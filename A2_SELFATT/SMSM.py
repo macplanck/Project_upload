@@ -82,7 +82,8 @@ def checked_scale_pow2_fp16(x_fp16: np.float16, k: int) -> np.float16:
     term = np.float16(np.float32(x_fp16) / (2.0 ** int(k)))
 
     if (x_fp16 != np.float16(0.0)) and (term == np.float16(0.0)):
-        raise UnderflowErrorFP16(f"Underflow: x={x_fp16} / 2**{k} -> term=0 (FP16).")
+        # raise UnderflowErrorFP16(f"Underflow: x={x_fp16} / 2**{k} -> term=0 (FP16).")
+        term = np.float16(0.0)
 
     if not np.isfinite(term):
         raise OverflowErrorFP16(f"Overflow/Invalid: x={x_fp16} / 2**{k} -> term={term} (FP16).")
@@ -93,6 +94,17 @@ def checked_scale_pow2_fp16(x_fp16: np.float16, k: int) -> np.float16:
 # ============================================================
 # Core class
 # ============================================================
+@dataclass(frozen=True)
+class SMSMOutput:
+    """
+    Output of one_operation().
+    """
+    maxExp:   int
+    sumDnm:   np.float16
+    exped: np.float16
+    DmnValid: bool
+    trgCnt:   int
+
 @dataclass
 class SMSM:
     """
@@ -129,9 +141,9 @@ class SMSM:
         newMax, newRslt, exped = self.eval(kqed)
         self.maxExp = int(newMax)
         self.sumDnm = np.float16(newRslt)
-        self.update_ctrl()
+        DmnValid = self.update_ctrl()
         self.trgCnt += 1
-        return self.maxExp, self.sumDnm, np.float16(exped)
+        return SMSMOutput(maxExp = int(newMax), sumDnm = np.float16(newRslt), exped = np.float16(exped), DmnValid = DmnValid, trgCnt = self.trgCnt)
 
     def eval(self, kqed: np.float16) -> Tuple[int, np.float16, np.float16]:
         """
@@ -147,6 +159,7 @@ class SMSM:
 
         # exp computed in higher precision, then quantized to FP16
         exped = np.float16(np.exp(np.float32(kqed_fp16)))
+        # print(exped)
 
         # flush FP16 subnormals to 0
         if is_fp16_subnormal(exped):
@@ -206,8 +219,10 @@ class SMSM:
             self.colCnt = 0
             self.maxExp = -14
             self.sumDnm = np.float16(0.0)
+            return 1
         else:
             self.colCnt += 1
+            return 0
 
 
 # ============================================================
