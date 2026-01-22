@@ -1,5 +1,7 @@
 import argparse
 import random
+import math
+import struct
 from pathlib import Path
 from A5_Utilis.B0_CONFIG.read_config import read_config
 
@@ -27,6 +29,10 @@ DIV = 4
 BIAS = 0
 
 LUT_NUM = 8
+
+SEQLEN = 8192
+HEADNUM = 32
+HIDSIZE = 4096
 
 ###################################################
 ###               FILL FUNCTIONs                ###
@@ -59,7 +65,7 @@ def fill_2D():
                         rand = 0
 
                     if SIGN:
-                        rand = rand - RANGE / 2
+                        rand = BIAS + rand - RANGE / 2
                     if TYPE:
                         f.write(f"{int(rand):4d}")
                     else:
@@ -88,7 +94,7 @@ def fill_1D():
             else:
                 rand = 0
             if SIGN:
-                rand = rand - RANGE / 2
+                rand = BIAS + rand - RANGE / 2
             if TYPE:
                 f.write(f"{int(rand):4d}")
             else:
@@ -128,6 +134,70 @@ def fill_LUT():
             else:
                 f.write(f"0],\n")
 
+def fill_CosSin ():
+
+    print(f"Generating LUT data to \'{PATH_INIT}/{mem_type}_{mem_name}.init\' ...")
+
+    def _theta(p,i,d,base = 10000):
+        '''
+        Docstring for theta
+        
+        :param p: token position (which sequence)
+        :param i: pair index (which pair does it refer to in a token)
+        :param d: head dimension (which head dimention is it)
+        :param base: typically 10,000
+        '''
+        assert base != 0, 'base should be larger than zero'
+        return p/(base**(2*i/d))
+    
+    def _float_to_fp16_decimal(x: float) -> float:
+        """
+        Convert Python float -> float16 -> decimal numeric value.
+        """
+        return struct.unpack('>e', struct.pack('>e', x))[0]
+
+    assert HIDSIZE%HEADNUM == 0, 'head dimension should be integer'
+    d = HIDSIZE//HEADNUM
+    assert d%2 == 0, 'head dimension should be even'
+
+    cossin = {}
+    cossin['cos'] = [[0.] * SEQLEN for _ in range(d//2)]
+    cossin['sin'] = [[0.] * SEQLEN for _ in range(d//2)]
+
+
+    for p in range (SEQLEN):
+        for i in range (d//2):
+            ang = _theta(p=p,i=i,d=d)
+
+            cosed = _float_to_fp16_decimal(math.cos(ang))
+            sined = _float_to_fp16_decimal(math.sin(ang))
+
+            cossin['cos'][i][p] = cosed
+            cossin['sin'][i][p] = sined
+
+    with open(f"{PATH_INIT}/{mem_type}_{mem_name}.init", 'w') as f:
+
+        for item in cossin:
+            f.write(f"{mem_type}_t[\'{mem_name}_{item}\'] = [")
+
+            for h in range(len(cossin[item])):
+                f.write(f"[")
+                for i in range(len(cossin[item][h])):
+                    if cossin[item][h][i] >= 0:
+                        f.write(f" ")
+
+                    f.write(f"{cossin[item][h][i]:4f}")
+
+                    if i == (len(cossin[item][h]) - 1):
+                        f.write(f"]")
+                    else:
+                        f.write(f",")
+
+                if h != (len(cossin[item]) - 1):
+                    f.write(f",\n")
+            f.write(f"]\n")
+
+
 
 ###################################################
 ###               FILL DRAM                     ###
@@ -162,6 +232,14 @@ if __name__ == '__main__':
         LUT_NUM = sram_config["LUT"][item]["LUT_num"]
         mem_name = f"{item}"
         fill_LUT()
+
+    for item in sram_config["CosSin"]:
+        SEQLEN = sram_config["CosSin"][item]["SEQLEN"]
+        HEADNUM = sram_config["CosSin"][item]["HEADNUM"]
+        HIDSIZE = sram_config["CosSin"][item]["HIDSIZE"]
+        print(f"sram CosSin: {item}")
+        mem_name = f"{item}"
+        fill_CosSin()
 
     for item in sram_config["sram_sp"]:
         X_WIDTH = sram_config["sram_sp"][item]["sram_X"]

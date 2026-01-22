@@ -1,4 +1,12 @@
-{
+{   
+    "CosSin":{
+        "ROPE": {
+            "SEQLEN": 64,
+            "HEADNUM": 32,
+            "HIDSIZE": 4096
+        }
+    },
+
     "LUT": {
 
         "LUT": {
@@ -75,7 +83,7 @@
             "type": "int",
             "sign": "signed",
             "range": 3,
-            "bias": 4
+            "bias": 6
         },
 
         "deqQ": {
@@ -83,7 +91,7 @@
             "type": "int",
             "sign": "signed",
             "range": 3,
-            "bias": 4
+            "bias": 6
         },
 
         "deqV": {
@@ -91,7 +99,7 @@
             "type": "int",
             "sign": "signed",
             "range": 3,
-            "bias": 4
+            "bias": 6
         },
 
         "smSum": {
@@ -109,7 +117,6 @@
             "range": 2,
             "bias": 3
         }
-
     },
 
     "sram_dp": {
