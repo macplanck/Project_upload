@@ -1,4 +1,12 @@
-{
+{   
+    "CosSin":{
+        "ROPE": {
+            "SEQLEN": 64,
+            "HEADNUM": 32,
+            "HIDSIZE": 4096
+        }
+    },
+
     "LUT": {
 
         "LUT": {
@@ -14,7 +22,8 @@
             "sram_Y": 32,
             "type": "int",
             "sign": "unsign",
-            "range": 0
+            "range": 0,
+            "bias": 0
         },
 
         "weight": {
@@ -22,18 +31,118 @@
             "sram_Y": 32,
             "type": "int",
             "sign": "unsign",
-            "range": 0
-        }
+            "range": 0,
+            "bias": 0
+        },
 
+        "smExpedWd": {
+            "sram_X": 64,
+            "type": "float",
+            "sign": "signed",
+            "range": 6,
+            "bias": 0
+        },
+
+        "smExpedRd": {
+            "sram_X": 64,
+            "type": "float",
+            "sign": "signed",
+            "range": 6,
+            "bias": 0
+        },
+        
+        "chunkK": {
+            "sram_X": 128,
+            "sram_Y": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "chunkQ": {
+            "sram_X": 128,
+            "sram_Y": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "chunkV": {
+            "sram_X": 128,
+            "sram_Y": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "deqK": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 6
+        },
+
+        "deqQ": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 6
+        },
+
+        "deqV": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 6
+        },
+
+        "smSum": {
+            "sram_X": 64,
+            "type": "float",
+            "sign": "signed",
+            "range": 4,
+            "bias": 5
+        },
+
+        "smMax": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 2,
+            "bias": 3
+        },
+
+        "qkvSum":{
+            "sram_X": 64,
+            "type": "float",
+            "sign": "signed",
+            "range": 2,
+            "bias": 0
+        },
+
+        "qkvMax":{
+            "sram_X": 64,
+            "type": "float",
+            "sign": "signed",
+            "range": 0,
+            "bias": 0
+        }
     },
 
     "sram_dp": {
         "FIFO": {
             "sram_X": 32,
             "type": "int",
-            "sign": "float",
-            "range": 0
+            "sign": "unsigned",
+            "range": 0,
+            "bias": 0
         }
     }
-    
+
 }
