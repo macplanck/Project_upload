@@ -51,7 +51,25 @@
             "bias": 0
         },
         
-        "chunkK": {
+        "tkQ0": {
+            "sram_X": 4096,
+            "sram_Y": 1,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "tkQ1": {
+            "sram_X": 4096,
+            "sram_Y": 1,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "tkK0": {
             "sram_X": 128,
             "sram_Y": 64,
             "type": "int",
@@ -60,7 +78,7 @@
             "bias": 0
         },
 
-        "chunkQ": {
+        "tkK1": {
             "sram_X": 128,
             "sram_Y": 64,
             "type": "int",
@@ -69,7 +87,16 @@
             "bias": 0
         },
 
-        "chunkV": {
+        "tkV0": {
+            "sram_X": 128,
+            "sram_Y": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "tkV1": {
             "sram_X": 128,
             "sram_Y": 64,
             "type": "int",
@@ -102,35 +129,43 @@
             "bias": 6
         },
 
-        "smSum": {
-            "sram_X": 64,
+        "smSum0": {
+            "sram_X": 32,
             "type": "float",
             "sign": "signed",
             "range": 4,
             "bias": 5
         },
 
-        "smMax": {
-            "sram_X": 64,
+        "smSum1": {
+            "sram_X": 32,
+            "type": "float",
+            "sign": "signed",
+            "range": 4,
+            "bias": 5
+        },
+
+        "smMax0": {
+            "sram_X": 32,
             "type": "int",
             "sign": "signed",
             "range": 2,
             "bias": 3
         },
 
-        "qkvSum":{
-            "sram_X": 64,
+        "smMax1": {
+            "sram_X": 32,
+            "type": "int",
+            "sign": "signed",
+            "range": 2,
+            "bias": 3
+        },
+
+        "qkvEle":{
+            "sram_X":4096,
             "type": "float",
             "sign": "signed",
             "range": 2,
-            "bias": 0
-        },
-
-        "qkvMax":{
-            "sram_X": 64,
-            "type": "float",
-            "sign": "signed",
-            "range": 0,
             "bias": 0
         }
     },
