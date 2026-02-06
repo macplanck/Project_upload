@@ -341,7 +341,7 @@ class SELTATT ():
                     # sum max searching (one sum of square and max per token)
                     self.qkvSumReg,self.qkvMaxReg,qkvSMValid = self.instQKVSM.one_operation(inSum = QKVRslt, theSum = self.qkvSumReg, theMax = self.qkvMaxReg, colMarker = self.VColCnt + self.tkCnt*self.instQK.headDim)
 
-                    if (qkvSMValid): # tbc it doesn't pull high for every token
+                    if (qkvSMValid):
                         print(f"output token No.{self.QKCnt}, with the sum value {self.qkvSumReg} and max value {self.qkvMaxReg}")
 
                 if verbose:
