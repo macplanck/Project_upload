@@ -1,0 +1,14 @@
+######################################
+###        ARG PARAMETER           ###
+######################################
+in_LOG=A1_QKV/11_QKV_verify.log
+in_FILE=MatMul
+in_NAME=verify_QKV
+in_TOKEN='qkv_token'
+in_WEIGHT='qkv_weightQ'
+
+
+######################################
+###          Make Command          ###
+######################################
+make mat_verify FILE=$in_FILE TOKEN=$in_TOKEN WEIGHT=$in_WEIGHT NAME=$in_NAME LOG=$in_LOG

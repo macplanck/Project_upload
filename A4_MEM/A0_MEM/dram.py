@@ -1,21 +1,17 @@
 from pathlib import Path
 from A5_Utilis.B0_CONFIG.read_config import read_config
-<<<<<<< HEAD
 from A4_MEM.A1_INIT.dram import dram_t
-=======
->>>>>>> orgin/main
-
+from A5_Utilis.B2_PERF.perf import PERF
 ###################################################
 ###            GLOBAL PARAMETERS                ###
 ###################################################
 BASE = Path(__file__).resolve().parent
-<<<<<<< HEAD
 PATH_CONF = (BASE / "../../A5_Utilis/B0_CONFIG/config_dram.json")
-=======
-PATH_CONF = (BASE / "../../A5_Utilis/B0_CONFIG/mem_config.json")
->>>>>>> orgin/main
 PATH_INIT = (BASE / "../A1_INIT")
 PATH_OUT  = (BASE / "../A2_OUT")
+
+if PERF:
+    PATH_CONF = (BASE / "../../A5_Utilis/B2_PERF/config_dram.json")
 
 ###################################################
 ###                DRAM CLASS                   ###
@@ -27,26 +23,8 @@ class DRAM:
         self.file_init  = ( PATH_INIT / f"dram_{name}.csv" )
         self.file_out   = ( PATH_OUT  / f"dram_{name}.csv" )
         # self.file_deb   = ( PATH_DEB  / f"dram_{name}.csv" )
-<<<<<<< HEAD
         self.memory = dram_t[f'{name}']
         self.name = name
-=======
-        self.memory = []
-        self.name = name
-        self.read_init()
-
-    def read_init(self):    
-        with open(self.file_init, 'r') as f:
-            for line in f:
-                read_line = line.replace("\n", "")
-                read_line = read_line.split(",")
-                while read_line.count('') > 0:
-                    read_line.remove('')
-                read_line = [ int(element) for element in read_line ]
-                # read_line = int(read_line)
-                self.memory.append(read_line.copy())
-            print("read finished ...")
->>>>>>> orgin/main
 
     def peak_mem(self, start=None, end=None, file=None, info='PEAK'):
 
@@ -84,7 +62,7 @@ class DRAM:
         
         Range = (len(sram), len(sram[0]))
 
-        print(f"Input SRAM: {sram}")
+        # print(f"Input SRAM: {sram}")
 
         if start[0] + Range[0] > self.dram_X:
             raise ValueError(f"MemError in op STORE {self.name}: X Address Exceed Valid Range")
@@ -105,9 +83,9 @@ class DRAM:
             end = (start[0] + Range[0], start[1] + Range[1])
 
             if end[0] > self.dram_X:
-                raise ValueError(f"MemError in op PEAK {self.name}: X Address Exceed Valid Range")
+                raise ValueError(f"MemError in op LOAD {self.name}: X Address Exceed Valid Range")
             elif end[1] > self.dram_Y:
-                raise ValueError(f"MemError in op PEAK {self.name}: Y Address Exceed Valid Range")
+                raise ValueError(f"MemError in op LOAD {self.name}: Y Address Exceed Valid Range")
             
             for i in range(start[0], end[0]):
                 for j in range(start[1], end[1]):
@@ -125,7 +103,6 @@ class DRAM:
 
         return sram_out.copy()
 
-<<<<<<< HEAD
 ###################################################
 ###             GLOBAL Functions                ###
 ###################################################
@@ -141,33 +118,12 @@ def dram_init():
 ###                MAIN CALLs                   ###
 ###################################################
 dram_init()
-=======
->>>>>>> orgin/main
 
 ###################################################
 ###                TEST Program                 ###
 ###################################################
 if __name__ == '__main__':
-<<<<<<< HEAD
     for item in dram:
         dram[item].peak_mem()
-=======
-
-    mem_config = read_config(PATH_CONF)
-    test_DRAM_token = DRAM(mem_config["token"], "token")
-    test_DRAM_token.peak_mem()
-
-    test_sram = [[ 2, 2, 2, 2 ], [3, 3, 3, 3]]
-
-    test_DRAM_token.store_mem((1, 1), test_sram)
-    test_DRAM_token.peak_mem(file=f"{PATH_OUT}/debug_{test_DRAM_token.name}.csv", info='STORE')
-
-    test_sram = test_DRAM_token.load_mem((1, 2), 4)
-    print(test_sram)
-
-    test_sram = [ 2, 2, 2, 2 ]
-    test_DRAM_token.store_mem((1, 1), test_sram)
-    test_DRAM_token.peak_mem(file=f"{PATH_OUT}/debug_{test_DRAM_token.name}.csv", info='STORE')
->>>>>>> orgin/main
 
 

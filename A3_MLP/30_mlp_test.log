@@ -1,0 +1,35 @@
+dram_finished
+********************************************
+available cycles: 1056768
+require accesses: 14712832
+access bit: 13.922480620155039
+access weight: 2
+access  token: 2
+num weight: 2
+num  token: 16
+********************************************
+available cycles: 1056768
+require accesses: 51412992
+access bit: 48.651162790697676
+access weight: 7
+access  token: 7
+num weight: 7
+num  token: 56
+********************************************
+available cycles: 1056768
+require accesses: 51494912
+access bit: 48.72868217054263
+access weight: 7
+access  token: 7
+num weight: 7
+num  token: 56
+This program is Executed
+dram_out 4096
+max 0, sum 0, <A4_MEM.A0_MEM.sram_perf.SRAM object at 0x10655de80>
+****************************************
+*************** bitwise ****************
+****************************************
+max -14 sum 0.0
+down CT count: 1048832
+gate CT count: 1060938
+out  CT count: 1048832

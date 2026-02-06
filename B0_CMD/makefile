@@ -1,36 +1,22 @@
-.PHONY: mat_mul mem_combine mem_clean mem_init mem_test mem_zip mem_func LUT_init 
+.PHONY: qkv_gen qkv_clean mlp_test mat_mul mat_verify mem_combine mem_clean mem_init mem_test mem_func test
 
-######################################
-# Set your desired file names
-######################################
-#-------------- MEM --------------
+###################################################
+###             GLOBAL Parameters               ###
+###################################################
 path_mem = A4_MEM/A0_MEM
 
-######################################
-# Default Setting
-######################################
 
-
-######################################
-# Simulation Option and Command
-######################################
-
-#---------- Bitlinear ------------
-MAT_MUL = python3 -m A5_Utilis.A0_BITLINEAR.${FILE}
+###################################################
+###            Simulation Command               ###
+###################################################
+#-------------- QKV --------------
+QKV_GEN = python3 -m A1_QKV.${FILE} | tee ${LOG}
+QKV_CLEAN = rm -rf A1_QKV/*.log
 
 #-------------- MEM --------------
-<<<<<<< HEAD
 DRAM_COMB = cat A4_MEM/A1_INIT/dram.def A4_MEM/A1_INIT/dram_*.init > A4_MEM/A1_INIT/dram.py
 SRAM_COMB = cat A4_MEM/A1_INIT/sram.def A4_MEM/A1_INIT/sram_*.init > A4_MEM/A1_INIT/sram.py
-=======
-# DRAM_COMB = type A4_MEM/A1_INIT/dram.def A4_MEM/A1_INIT/dram_*.init > A4_MEM/A1_INIT/dram.py
-# SRAM_COMB = type A4_MEM/A1_INIT/sram.def A4_MEM/A1_INIT/sram_*.init > A4_MEM/A1_INIT/sram.py
-
-DRAM_COMB = powershell -Command "Get-Content A4_MEM/A1_INIT/dram.def, A4_MEM/A1_INIT/dram_*.init | Set-Content A4_MEM/A1_INIT/dram.py"
-SRAM_COMB = powershell -Command "Get-Content A4_MEM/A1_INIT/sram.def, A4_MEM/A1_INIT/sram_*.init | Set-Content A4_MEM/A1_INIT/sram.py"
->>>>>>> orgin/main
-
-MEM_CLEAN = rm -rf A4_MEM/A1_INIT/dram.py A4_MEM/A1_INIT/sram.py
+MEM_CLEAN = rm -rf A4_MEM/A1_INIT/*.${FILE} A4_MEM/A2_OUT/*.${FILE} A4_MEM/A1_INIT/dram.py${FILE} A4_MEM/A1_INIT/sram.py${FILE}
 
 MEM_INIT = python3 -m A4_MEM.A1_INIT.${MEM} \
 	--XLEN  ${XLEN}  \
@@ -38,12 +24,7 @@ MEM_INIT = python3 -m A4_MEM.A1_INIT.${MEM} \
 	--type  ${TYPE}  \
 	--sign  ${SIGN}  \
 	--name  ${NAME}  \
-<<<<<<< HEAD
 	--range ${RANGE}
-=======
-	--range ${RANGE} \
-	--bias  ${BIAS}
->>>>>>> orgin/main
 
 MEM_TEST = python3 -m A4_MEM.A0_MEM.${MEM}
 MEM_FUNC = python3 -m A4_MEM.A3_TEST.${MEM} --test ${TEST}
@@ -52,20 +33,37 @@ LUT_INIT = python3 -m A4_MEM.A1_INIT.${LUT} \
 	--LNUM ${LNUM} \
 	--name ${NAME}
 
-
-######################################
-# Make Command
-######################################
+#-------------- MLP --------------
+MLP_TEST = python3 -m A3_MLP.${FILE} | tee ${LOG}
 
 #------------ Utilis -------------
-<<<<<<< HEAD
+MAT_MUL = python3 -m A5_Utilis.A0_BITLINEAR.${FILE}
+MAT_VER = python3 -m A5_Utilis.A0_BITLINEAR.${FILE} \
+	--f ${NAME}   \
+	--t ${TOKEN}   \
+	--w ${WEIGHT}  | tee ${LOG}
+
+#-------------- Test -------------
+TEST = python3 -m B2_TEST.${FILE}
+
+###################################################
+###                MAKE Command                 ###
+###################################################
+#-------------- QKV --------------
+qkv_gen:
+	cd ..  &&  ${QKV_GEN}
+qkv_clean:
+	cd ..  &&  ${QKV_CLEAN}
+
+#-------------- MLP --------------
+mlp_test:
+	cd ..  &&  ${MLP_TEST}
+
+#------------ Utilis -------------
 mat_mul:
 	cd ..  &&  ${MAT_MUL}
-=======
-# mat_mul:
-# 	cd ..  &&  ${MAT_MUL}
->>>>>>> orgin/main
-
+mat_verify:
+	cd ..  &&  ${MAT_VER}
 #-------------- MEM --------------
 mem_combine:
 	cd ..  &&  ${DRAM_COMB}
@@ -78,5 +76,6 @@ mem_test:
 	cd ..  &&  ${MEM_TEST}
 mem_func:
 	cd ..  &&  ${MEM_FUNC}
-LUT_init:
-	cd ..  &&  ${LUT_INIT}
+
+test:
+	cd ..  &&  ${TEST}

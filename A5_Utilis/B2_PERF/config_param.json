@@ -1,0 +1,10 @@
+{
+    "token_size": 8,
+    "weight_size": 7,
+    "LUT_NUM": 8,
+    "hidden_size": 4096,
+    "seq_length":  8192,
+    "head_num": 32,
+    "head_dim": 128,
+    "intermediate_size": 14336
+}

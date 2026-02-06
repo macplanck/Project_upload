@@ -1,0 +1,315 @@
+{   
+    "CosSin":{
+        "ROPE": {
+            "SEQLEN": 64,
+            "HEADNUM": 32,
+            "HIDSIZE": 4096
+        }
+    },
+
+    "LUT": {
+
+        "LUT": {
+            "LUT_num": 8
+        }
+
+    },
+
+    "sram_sp": {
+        "mlp_test": {
+            "sram_X": 4096,
+            "type": "int",
+            "sign": "signed",
+            "range": 0,
+            "bias": 0
+        },
+        "out_weight": {
+            "sram_X": 4096,
+            "sram_Y": 2,
+            "type": "int",
+            "sign": "signed",
+            "range": 0,
+            "bias": 0
+        },
+        "up_weight": {
+            "sram_X": 14336,
+            "sram_Y": 7,
+            "type": "int",
+            "sign": "signed",
+            "range": 0,
+            "bias": 0
+        },
+        "gate_weight": {
+            "sram_X": 14336,
+            "sram_Y": 7,
+            "type": "int",
+            "sign": "signed",
+            "range": 0,
+            "bias": 0
+        },
+        "down_weight": {
+            "sram_X": 4096,
+            "sram_Y": 7,
+            "type": "int",
+            "sign": "signed",
+            "range": 0,
+            "bias": 0
+        },
+
+
+        "qkv_max": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 4,
+            "bias": 14
+        },
+        "qkv_sum": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsign",
+            "range": 10,
+            "bias": 1
+        },
+
+        "qkv_token": {
+            "sram_X": 16,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+
+        "qkv_weightQ": {
+            "sram_X": 64,
+            "sram_Y": 2,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_weightK": {
+            "sram_X": 64,
+            "sram_Y": 2,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_weightV": {
+            "sram_X": 64,
+            "sram_Y": 2,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+
+        "smExpedWd": {
+            "sram_X": 64,
+            "type": "float",
+            "sign": "signed",
+            "range": 6,
+            "bias": 0
+        },
+
+        "smExpedRd": {
+            "sram_X": 64,
+            "type": "float",
+            "sign": "signed",
+            "range": 6,
+            "bias": 0
+        },
+        
+        "chunkK": {
+            "sram_X": 128,
+            "sram_Y": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "chunkQ": {
+            "sram_X": 128,
+            "sram_Y": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "chunkV": {
+            "sram_X": 128,
+            "sram_Y": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 0
+        },
+
+        "deqK": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 6
+        },
+
+        "deqQ": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 6
+        },
+
+        "deqV": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 3,
+            "bias": 6
+        },
+
+        "smSum": {
+            "sram_X": 64,
+            "type": "float",
+            "sign": "signed",
+            "range": 4,
+            "bias": 5
+        },
+
+        "smMax": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "signed",
+            "range": 2,
+            "bias": 3
+        },
+
+        "qkv_buf1_Q": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsigned",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_buf2_Q": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsigned",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_buf1_K": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsigned",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_buf2_K": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsigned",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_buf1_V": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsigned",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_buf2_V": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsigned",
+            "range": 0,
+            "bias": 0
+        },
+
+        "qkv_token_Q": {
+            "sram_X": 64,
+            "sram_Y": 1,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_token_K": {
+            "sram_X": 64,
+            "sram_Y": 1,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_token_V": {
+            "sram_X": 64,
+            "sram_Y": 1,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+
+        "qkv_max_Q": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_max_K": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_max_V": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+
+        "qkv_sum_Q": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_sum_K": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        },
+        "qkv_sum_V": {
+            "sram_X": 64,
+            "type": "int",
+            "sign": "unsign",
+            "range": 0,
+            "bias": 0
+        }
+
+    },
+
+    "sram_dp": {
+        "FIFO": {
+            "sram_X": 32,
+            "type": "int",
+            "sign": "unsigned",
+            "range": 0,
+            "bias": 0
+        }
+    }
+
+}

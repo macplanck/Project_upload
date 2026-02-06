@@ -1,0 +1,98 @@
+{
+    "qkv_weightQ": {
+        "dram_X": 4096,
+        "dram_Y": 512,
+        "type": "int",
+        "sign": "unsign",
+        "range": 6561,
+        "bias": 0
+    },
+    "qkv_weightK": {
+        "dram_X": 4096,
+        "dram_Y": 512,
+        "type": "int",
+        "sign": "unsign",
+        "range": 6561,
+        "bias": 0
+    },
+    "qkv_weightV": {
+        "dram_X": 4096,
+        "dram_Y": 512,
+        "type": "int",
+        "sign": "unsign",
+        "range": 6561,
+        "bias": 0
+    },
+    "qkv_token": {
+        "dram_X": 4096,
+        "dram_Y": 8192,
+        "type": "int",
+        "sign": "signed",
+        "range": 256,
+        "bias": 0
+    },
+    "smExped": {
+        "dram_X": 64,
+        "dram_Y": 64,
+        "type": "float",
+        "sign": "signed",
+        "range": 4,
+        "bias": 0
+    },
+    "quanK": {
+        "dram_X": 4096,
+        "dram_Y": 8192,
+        "type": "int",
+        "sign": "signed",
+        "range": 3,
+        "bias": 0
+    },
+    "quanQ": {
+        "dram_X": 4096,
+        "dram_Y": 8192,
+        "type": "int",
+        "sign": "signed",
+        "range": 3,
+        "bias": 0
+    },
+    "quanV": {
+        "dram_X": 4096,
+        "dram_Y": 8192,
+        "type": "int",
+        "sign": "signed",
+        "range": 3,
+        "bias": 0
+    },
+    "out_weight": {
+        "dram_X": 4096,
+        "dram_Y": 512,
+        "type": "int",
+        "sign": "unsign",
+        "range": 6561,
+        "bias": 0
+    },
+    "up_weight": {
+        "dram_X": 14336,
+        "dram_Y": 512,
+        "type": "int",
+        "sign": "unsign",
+        "range": 6561,
+        "bias": 0
+    },
+    "gate_weight": {
+        "dram_X": 14336,
+        "dram_Y": 512,
+        "type": "int",
+        "sign": "unsign",
+        "range": 6561,
+        "bias": 0
+    },
+    "down_weight": {
+        "dram_X": 14336,
+        "dram_Y": 1792,
+        "type": "int",
+        "sign": "unsign",
+        "range": 6561,
+        "bias": 0
+    }
+}

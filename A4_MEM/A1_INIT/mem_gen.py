@@ -1,19 +1,22 @@
 import argparse
 import random
-<<<<<<< HEAD
-=======
 import math
 import struct
->>>>>>> orgin/main
 from pathlib import Path
 from A5_Utilis.B0_CONFIG.read_config import read_config
+from A5_Utilis.B2_PERF.perf import PERF
 
 mem_name = 'dram'
 
 BASE = Path(__file__).resolve().parent
 PATH_INIT = BASE
-PATH_DRAM = (BASE / "../../A5_Utilis/B0_CONFIG/config_dram.json")
-PATH_SRAM = (BASE / "../../A5_Utilis/B0_CONFIG/config_sram.json")
+
+if PERF:
+    PATH_DRAM = (BASE / "../../A5_Utilis/B2_PERF/config_dram.json")
+    PATH_SRAM = (BASE / "../../A5_Utilis/B2_PERF/config_sram.json")
+else:
+    PATH_DRAM = (BASE / "../../A5_Utilis/B0_CONFIG/config_dram.json")
+    PATH_SRAM = (BASE / "../../A5_Utilis/B0_CONFIG/config_sram.json")
 
 ###################################################
 ###            GLOBAL PARAMETERS                ###
@@ -28,12 +31,7 @@ Y_WIDTH = 1024
 RANGE = 256
 TYPE = 1
 SIGN = 0
-DIV = 4
-<<<<<<< HEAD
-
-LUT_NUM = 8
-
-=======
+DIV = 1
 BIAS = 0
 
 LUT_NUM = 8
@@ -42,7 +40,9 @@ SEQLEN = 8192
 HEADNUM = 32
 HIDSIZE = 4096
 
->>>>>>> orgin/main
+if PERF:
+    DIV = 4
+
 ###################################################
 ###               FILL FUNCTIONs                ###
 ###################################################
@@ -69,16 +69,12 @@ def fill_2D():
                         f.write(f"[")
 
                     if RANGE:
-                        rand = random.uniform(0, RANGE)
+                        rand = random.uniform(0, RANGE) + BIAS
                     else:
                         rand = 0
 
                     if SIGN:
-<<<<<<< HEAD
                         rand = rand - RANGE / 2
-=======
-                        rand = BIAS + rand - RANGE / 2
->>>>>>> orgin/main
                     if TYPE:
                         f.write(f"{int(rand):4d}")
                     else:
@@ -103,15 +99,11 @@ def fill_1D():
                 f.write(f"{mem_type}_t[\'{mem_name}\'] = [")
 
             if RANGE:
-                rand = random.uniform(0, RANGE)
+                rand = random.uniform(0, RANGE) + BIAS
             else:
                 rand = 0
             if SIGN:
-<<<<<<< HEAD
                 rand = rand - RANGE / 2
-=======
-                rand = BIAS + rand - RANGE / 2
->>>>>>> orgin/main
             if TYPE:
                 f.write(f"{int(rand):4d}")
             else:
@@ -151,8 +143,6 @@ def fill_LUT():
             else:
                 f.write(f"0],\n")
 
-<<<<<<< HEAD
-=======
 def fill_CosSin ():
 
     print(f"Generating LUT data to \'{PATH_INIT}/{mem_type}_{mem_name}.init\' ...")
@@ -217,7 +207,6 @@ def fill_CosSin ():
             f.write(f"]\n")
 
 
->>>>>>> orgin/main
 
 ###################################################
 ###               FILL DRAM                     ###
@@ -231,10 +220,7 @@ if __name__ == '__main__':
     for item in dram_config:
         X_WIDTH = dram_config[item]["dram_X"]
 
-<<<<<<< HEAD
-=======
         BIAS = dram_config[item]["bias"]
->>>>>>> orgin/main
         RANGE = dram_config[item]["range"]
         SIGN = dram_config[item]["sign"] == "signed"
         TYPE = dram_config[item]["type"] == "int"
@@ -256,10 +242,6 @@ if __name__ == '__main__':
         mem_name = f"{item}"
         fill_LUT()
 
-<<<<<<< HEAD
-    for item in sram_config["sram_sp"]:
-        X_WIDTH = sram_config["sram_sp"][item]["sram_X"]
-=======
     for item in sram_config["CosSin"]:
         SEQLEN = sram_config["CosSin"][item]["SEQLEN"]
         HEADNUM = sram_config["CosSin"][item]["HEADNUM"]
@@ -272,7 +254,6 @@ if __name__ == '__main__':
         X_WIDTH = sram_config["sram_sp"][item]["sram_X"]
 
         BIAS = sram_config["sram_sp"][item]["bias"]
->>>>>>> orgin/main
         RANGE = sram_config["sram_sp"][item]["range"]
         SIGN = sram_config["sram_sp"][item]["sign"] == "signed"
         TYPE = sram_config["sram_sp"][item]["type"] == "int"
@@ -286,11 +267,8 @@ if __name__ == '__main__':
     mem_type = "sram_dp"
     for item in sram_config["sram_dp"]:
         X_WIDTH = sram_config["sram_dp"][item]["sram_X"]
-<<<<<<< HEAD
-=======
 
         BIAS = sram_config["sram_dp"][item]["bias"]
->>>>>>> orgin/main
         RANGE = sram_config["sram_dp"][item]["range"]
         SIGN = sram_config["sram_dp"][item]["sign"] == "signed"
         TYPE = sram_config["sram_dp"][item]["type"] == "int"
