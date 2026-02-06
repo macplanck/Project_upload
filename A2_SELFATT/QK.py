@@ -116,11 +116,7 @@ class QK:
         hiddenSize: int = 4096,
         headNum: int = 32,
         seqLen: int = 8192,
-<<<<<<< HEAD
-        lat: int = 4,
-=======
         lat: int = 7,
->>>>>>> orgin/main
     ) -> None:
         # Floating-point exception behavior (as requested).
         np.seterr(over="raise", divide="raise", invalid="raise", under="ignore")
@@ -130,11 +126,8 @@ class QK:
         self.headNum = int(headNum)
         self.seqLen = int(seqLen)
         self.lat = int(lat)
-<<<<<<< HEAD
-=======
         # latency:
         # {q or k}_buf  -> {q or k}_deq -> cos and sin for RoPE -> addsub and mult from RoPE -> QKmult -> add32to8 -> add8to2 -> add2toAccu
->>>>>>> orgin/main
 
         # Derived
         if self.headNum <= 0:
@@ -200,10 +193,6 @@ class QK:
             out[i] = fp16_scalar(float(num_fp16) / scale)
 
         return out
-<<<<<<< HEAD
-
-    def eval(self, inNum: np.ndarray, dqFac: int) -> Tuple[np.float16, bool]:
-=======
     
     def _rotate_half(self,x: np.ndarray) -> np.ndarray:
         """
@@ -231,7 +220,6 @@ class QK:
         return y
 
     def eval(self, inNum: np.ndarray, dqFac: int, ROPEcos: np.ndarray, ROPEsin: np.ndarray) -> Tuple[np.float16, bool]:
->>>>>>> orgin/main
         """
         Evaluate one cycle: either load Q slice or accumulate K slice.
 
@@ -241,11 +229,6 @@ class QK:
         """
         deq = self._dequantize(inNum, dqFac)
 
-<<<<<<< HEAD
-        if self.qFlag:
-            # Q-load cycle
-            self.qDeq = deq
-=======
         deq_prime = self._rotate_half(deq)
         roped = []
         for i in range (len(deq)//2):
@@ -255,16 +238,11 @@ class QK:
         if self.qFlag:
             # Q-load cycle
             self.qDeq = np.array(roped)
->>>>>>> orgin/main
             partialSum = self.accu[self.colCnt]  # should not be treated as valid output
             outValid = False
         else:
             # K cycle
-<<<<<<< HEAD
-            self.kDeq = deq
-=======
             self.kDeq = np.array(roped)
->>>>>>> orgin/main
             # dot32 in FP16 (multiply then tree-sum)
             mul_fp16 = np.array(
                 [fp16_scalar(float(self.kDeq[i]) * float(self.qDeq[i])) for i in range(32)],
@@ -354,11 +332,7 @@ class QK:
                         f"expected colCnt increment by 1."
                     )
 
-<<<<<<< HEAD
-    def one_operation(self, inNum: np.ndarray, dqFac: int) -> QKOutput:
-=======
     def one_operation(self, inNum: np.ndarray, dqFac: int, ROPEcos: np.ndarray, ROPEsin: np.ndarray) -> QKOutput:
->>>>>>> orgin/main
         """
         Perform one cycle of operation.
 
@@ -369,13 +343,10 @@ class QK:
             (either Q slice when qFlag=1, or K slice when qFlag=0).
         dqFac : int
             Signed 5-bit integer in [-16, 15]. Dequant exponent.
-<<<<<<< HEAD
-=======
         ROPEcos: np.ndarray
             Shape (16,), dtype float16
         ROPEsin: np.ndarray
             Shape (16,), dtype float16
->>>>>>> orgin/main
 
         Returns
         -------
@@ -392,11 +363,7 @@ class QK:
         sliceIndex = self.sliceCnt
         qFlagNow = self.qFlag
 
-<<<<<<< HEAD
-        prtSum, outValid = self.eval(inNum, dqFac)
-=======
         prtSum, outValid = self.eval(inNum, dqFac, ROPEcos, ROPEsin)
->>>>>>> orgin/main
 
         # Accu write: only on K cycles
         if not qFlagNow:

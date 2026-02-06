@@ -210,11 +210,7 @@ class QKV:
     - If exponent adjustment would exceed max normal exponent field (30): raise FPVOverflowError.
     """
 
-<<<<<<< HEAD
-    def __init__(self) -> None:
-=======
     def __init__(self,seqLen) -> None:
->>>>>>> orgin/main
         # Reminder settings: treat overflow/div/invalid as exceptions, underflow ignored (per your reminder).
         np.seterr(over="raise", divide="raise", invalid="raise", under="ignore")
 
@@ -262,11 +258,7 @@ class QKV:
     # Public API
     # ------------------------------------------------------------
 
-<<<<<<< HEAD
-    def set_inputs(self, *, inNum: Sequence[Union[np.float16, float, int]], dqFac: int) -> None:
-=======
     def set_inputs(self, *, inNum: Sequence[Union[np.float16, float, int]], dqFac: Sequence[Union[list[int], np.ndarray]]) -> None:
->>>>>>> orgin/main
         """
         Set the inputs for the next one_operation() call.
 
@@ -276,11 +268,7 @@ class QKV:
             Length-32 vector.
             - If QKFlag==1 for the coming cycle: elements are interpreted as fp16 softmax values.
             - If QKFlag==0 for the coming cycle: elements are interpreted as int8 V values.
-<<<<<<< HEAD
-        dqFac : int
-=======
         dqFac : sequence in (32,)
->>>>>>> orgin/main
             Signed shift count applied to FP16 biased exponent during V dequantization.
 
         Notes
@@ -288,18 +276,11 @@ class QKV:
         The caller is responsible for providing the correct data type per phase, consistent with QKFlag.
         """
         arr = np.asarray(inNum)
-<<<<<<< HEAD
-        if arr.shape != (32,):
-            raise ValueError("inNum must have shape (32,)")
-        self.inNum = arr
-        self.dqFac = int(dqFac)
-=======
         arr1 = np.asarray(dqFac)
         if arr.shape != (32,) or arr1.shape != (32,):
             raise ValueError("inNum and dqFac must have shape (32,)")
         self.inNum = arr
         self.dqFac = arr1
->>>>>>> orgin/main
 
     def one_operation(self) -> np.float16:
         """
@@ -322,18 +303,11 @@ class QKV:
         if self.QKFlag == 0:
             self.accu[self.colCnt] = prtSum
 
-<<<<<<< HEAD
-        self.update_ctrl()
-        self.trgCnt += 1
-
-        return prtSum
-=======
         cpColCnt = self.colCnt
         self.update_ctrl()
         self.trgCnt += 1
 
         return prtSum,cpColCnt
->>>>>>> orgin/main
 
     # ------------------------------------------------------------
     # Core operations
@@ -368,11 +342,7 @@ class QKV:
             return partialSum
 
         # V path: dequantize by FP16 exponent adjustment (FTZ on subnormals)
-<<<<<<< HEAD
-        dqFac = int(self.dqFac)
-=======
         dqFac = self.dqFac
->>>>>>> orgin/main
 
         # Interpret inNum as int8 for V input (spec says 32*int8 expected)
         v_int8 = np.asarray(self.inNum, dtype=np.int8)
@@ -386,11 +356,7 @@ class QKV:
                 self.Vdeq[i] = np.float16(0.0)
                 continue
 
-<<<<<<< HEAD
-            fpVExpo = int(f.exponent) - dqFac  # biased exponent adjustment
-=======
             fpVExpo = int(f.exponent) - int(dqFac[i])  # biased exponent adjustment
->>>>>>> orgin/main
 
             # FTZ behavior: if exponent field would be <= 0, flush to zero.
             if fpVExpo <= 0:
@@ -398,11 +364,7 @@ class QKV:
             elif fpVExpo > 30:
                 # Spec comment: "NaN occur" -> raise
                 raise FPVOverflowError(
-<<<<<<< HEAD
-                    f"Exponent adjust overflow: exp={f.exponent}, dqFac={dqFac}, fpVExpo={fpVExpo}"
-=======
                     f"Exponent adjust overflow: exp={f.exponent}, dqFac={dqFac[i]}, fpVExpo={fpVExpo}"
->>>>>>> orgin/main
                 )
             else:
                 self.Vdeq[i] = fp16_pack(f.signed, fpVExpo, f.mantissa)
@@ -613,8 +575,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-<<<<<<< HEAD
     main()
-=======
-    main()
->>>>>>> orgin/main
