@@ -51,6 +51,7 @@
             "bias": 0
         },
         
+<<<<<<< HEAD
         "tkQ0": {
             "sram_X": 4096,
             "sram_Y": 1,
@@ -70,6 +71,9 @@
         },
 
         "tkK0": {
+=======
+        "chunkK": {
+>>>>>>> orgin/main
             "sram_X": 128,
             "sram_Y": 64,
             "type": "int",
@@ -78,7 +82,11 @@
             "bias": 0
         },
 
+<<<<<<< HEAD
         "tkK1": {
+=======
+        "chunkQ": {
+>>>>>>> orgin/main
             "sram_X": 128,
             "sram_Y": 64,
             "type": "int",
@@ -87,6 +95,7 @@
             "bias": 0
         },
 
+<<<<<<< HEAD
         "tkV0": {
             "sram_X": 128,
             "sram_Y": 64,
@@ -97,6 +106,9 @@
         },
 
         "tkV1": {
+=======
+        "chunkV": {
+>>>>>>> orgin/main
             "sram_X": 128,
             "sram_Y": 64,
             "type": "int",
@@ -129,14 +141,20 @@
             "bias": 6
         },
 
+<<<<<<< HEAD
         "smSum0": {
             "sram_X": 32,
+=======
+        "smSum": {
+            "sram_X": 64,
+>>>>>>> orgin/main
             "type": "float",
             "sign": "signed",
             "range": 4,
             "bias": 5
         },
 
+<<<<<<< HEAD
         "smSum1": {
             "sram_X": 32,
             "type": "float",
@@ -147,10 +165,15 @@
 
         "smMax0": {
             "sram_X": 32,
+=======
+        "smMax": {
+            "sram_X": 64,
+>>>>>>> orgin/main
             "type": "int",
             "sign": "signed",
             "range": 2,
             "bias": 3
+<<<<<<< HEAD
         },
 
         "smMax1": {
@@ -167,6 +190,8 @@
             "sign": "signed",
             "range": 2,
             "bias": 0
+=======
+>>>>>>> orgin/main
         }
     },
 

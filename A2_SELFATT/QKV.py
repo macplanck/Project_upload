@@ -1,445 +1,620 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Iterable, Optional, Tuple
+from dataclasses import dataclass
+from typing import List, Optional, Sequence, Tuple, Union
+
 import numpy as np
 
 
-class SpecViolationError(AssertionError):
-    """Raised when the implementation detects a specification violation."""
+# ============================================================
+# Errors (explicit, spec-oriented)
+# ============================================================
+
+class SpecViolationError(RuntimeError):
+    """Raised when the internal schedule/control sequence violates the spec."""
 
 
-def fp16(x: float | np.floating | np.ndarray) -> np.float16 | np.ndarray:
+class FPVOverflowError(OverflowError):
+    """Raised when FP16 exponent adjustment would produce an invalid/NaN exponent field."""
+
+
+# ============================================================
+# FP16 bit packing/unpacking (IEEE-754 binary16)
+# ============================================================
+
+@dataclass(frozen=True)
+class FP16Fields:
     """
-    Cast scalar/array to FP16 with IEEE-754 binary16 rounding.
+    IEEE-754 binary16 fields.
 
-    Notes
-    -----
-    This is the primary mechanism used here to enforce the rule:
-    'all floating point operation should be conducted in float16'.
+    Attributes
+    ----------
+    signed : int
+        0 or 1.
+    exponent : int
+        5-bit biased exponent field in [0..31].
+        0 => zero/subnormal, 31 => inf/NaN.
+    mantissa : int
+        10-bit fraction field in [0..1023].
     """
-    return np.asarray(x, dtype=np.float16)
+    signed: int
+    exponent: int
+    mantissa: int
 
 
-def adder_tree_fp16(vec32: np.ndarray) -> np.float16:
+def fp16_unpack(x: np.float16) -> FP16Fields:
     """
-    Reduce 32 FP16 numbers using an FP16 pairwise adder tree.
+    Unpack np.float16 into IEEE-754 binary16 fields.
 
     Parameters
     ----------
-    vec32 : np.ndarray
-        Shape (32,), dtype float16 (or castable).
+    x : np.float16
+        Input half-precision float.
+
+    Returns
+    -------
+    FP16Fields
+        The sign, biased exponent, and mantissa fields.
+
+    Example
+    -------
+    >>> f = fp16_unpack(np.float16(1.5))
+    >>> (f.signed, f.exponent, f.mantissa)  # doctest: +SKIP
+    (0, 15, 512)
+    """
+    u = np.frombuffer(np.float16(x).tobytes(), dtype=np.uint16)[0]
+    signed = (u >> 15) & 0x1
+    exponent = (u >> 10) & 0x1F
+    mantissa = u & 0x03FF
+    return FP16Fields(int(signed), int(exponent), int(mantissa))
+
+
+def fp16_pack(signed: int, exponent: int, mantissa: int) -> np.float16:
+    """
+    Pack IEEE-754 binary16 fields into np.float16.
+
+    Parameters
+    ----------
+    signed : int
+        0 or 1.
+    exponent : int
+        5-bit biased exponent field in [0..31].
+    mantissa : int
+        10-bit fraction field in [0..1023].
 
     Returns
     -------
     np.float16
-        FP16-reduced sum with FP16 rounding after every add.
+        Packed half-precision float.
 
-    Raises
-    ------
-    ValueError
-        If input shape is not (32,).
+    Notes
+    -----
+    This function does not attempt to canonicalize NaNs; it just packs bits.
     """
-    x = np.asarray(vec32, dtype=np.float16)
-    if x.shape != (32,):
-        raise ValueError(f"adder_tree_fp16 expects shape (32,), got {x.shape}")
+    if signed not in (0, 1):
+        raise ValueError("signed must be 0 or 1")
+    if not (0 <= exponent <= 31):
+        raise ValueError("exponent must be in [0..31]")
+    if not (0 <= mantissa <= 1023):
+        raise ValueError("mantissa must be in [0..1023]")
 
-    # Pairwise tree: 32 -> 16 -> 8 -> 4 -> 2 -> 1
-    # FP16 rounding after each add by casting back to np.float16.
-    stage = x
-    while stage.shape[0] > 1:
-        stage = fp16(stage[0::2] + stage[1::2])  # FP16 add then quantize
-    return np.float16(stage[0])
+    u = (np.uint16(signed) << 15) | (np.uint16(exponent) << 10) | np.uint16(mantissa)
+    return np.frombuffer(np.uint16(u).tobytes(), dtype=np.float16)[0]
 
 
-@dataclass
+def fp16(x: Union[float, np.float16, np.ndarray]) -> Union[np.float16, np.ndarray]:
+    """
+    Cast helper to enforce FP16 operations.
+
+    Parameters
+    ----------
+    x : float or np.float16 or np.ndarray
+        Value(s) to cast.
+
+    Returns
+    -------
+    np.float16 or np.ndarray
+        FP16-cast value(s).
+    """
+    return np.asarray(x, dtype=np.float16) if isinstance(x, np.ndarray) else np.float16(x)
+
+
+def adder_tree_fp16(vec32: np.ndarray) -> np.float16:
+    """
+    FP16 pairwise reduction (tree) over a vector.
+
+    Parameters
+    ----------
+    vec32 : np.ndarray
+        Shape (32,), dtype float16.
+
+    Returns
+    -------
+    np.float16
+        Reduced sum in FP16, using pairwise (tree) adds.
+
+    Notes
+    -----
+    This intentionally mimics a tree reduction rather than a linear fold.
+    """
+    if vec32.shape != (32,):
+        raise ValueError("adder_tree_fp16 expects shape (32,)")
+    if vec32.dtype != np.float16:
+        vec32 = np.asarray(vec32, dtype=np.float16)
+
+    lvl = vec32
+    while lvl.size > 1:
+        nxt: List[np.float16] = []
+        i = 0
+        while i + 1 < lvl.size:
+            nxt.append(np.float16(lvl[i] + lvl[i + 1]))
+            i += 2
+        if i < lvl.size:
+            nxt.append(np.float16(lvl[i]))
+        lvl = np.asarray(nxt, dtype=np.float16)
+    return np.float16(lvl[0])
+
+
+# ============================================================
+# QKV simulator
+# ============================================================
+
 class QKV:
     """
-    QKV block simulator: computes one row of V * softmax(QK^T) in a streaming schedule.
+    QKV block simulator (V * softmax(QK^T) row generator) using a softmax(QK^T)-stationary schedule.
+
+    What this implements, restated
+    ------------------------------
+    - For each slice of the sequence dimension (32-wide, total seqLen/32 slices):
+      1) Load QKbuf (32 fp16 values): one operation where QKFlag==1.
+      2) Then perform Dh operations (Dh = hiddenSize/headNum):
+         each operation streams V[kBlock:kBlock+32, d] as 32 int8 values,
+         dequantizes by exponent adjustment using dqFac, computes dot32(QKbuf, Vdeq),
+         adds previous accu[d], and writes back accu[d].
+    - Outputs are considered valid only on the *final slice* and only for V-ops (QKFlag==0),
+      one column per cycle.
 
     Model parameters
-    ----------------
+    ---------------
     hiddenSize : int
-        Total hidden size (default 4096).
+        Default 4096.
     headNum : int
-        Number of heads (default 32).
+        Default 32.
     seqLen : int
-        Sequence length (default 8192).
-    lat : int
-        Nominal hardware latency annotation (default 3). Not modeled as a delay here.
+        Default 8192.
+    Dh : int
+        Derived = hiddenSize/headNum.
 
-    Control/state
+    Control state
     -------------
     sliceCnt : int
-        Which 32-token slice of the softmax row we are processing. Range: [0, seqLen/32 - 1]
+        Which seq slice we are on, range [0..(seqLen/32 - 1)].
     colCnt : int
-        Which head-dim index (d) we are updating. Range: [0, Dh - 1]
-    QKFlag : bool
-        True means the current call provides QK slice (softmax weights) to load QKbuf.
-        False means the current call provides V slice to compute dot and accumulate.
+        Which output column d we are on, range [0..(Dh - 1)].
+    QKFlag : int
+        1 => input is QKbuf (softmax slice), 0 => input is V block.
+        Initialized high per spec.
 
-    Storage
+    Outputs
     -------
-    QKbuf : np.ndarray
-        Shape (32,), dtype float16.
-    Vbuf : np.ndarray
-        Shape (32,), dtype float16.
-    accu : np.ndarray
-        Shape (Dh,), dtype float16. Accumulator across slices.
+    outValid : bool
+        True exactly when (not QKFlag) and sliceCnt is the last slice.
+    outCol : int
+        Column index associated with outValid.
 
-    Spec checker
-    ------------
-    Enforces: per slice => exactly 1 QK call followed by Dh V calls, in that order.
+    Notes on numeric behavior (per spec intent)
+    -------------------------------------------
+    - All arithmetic is performed in float16.
+    - V dequantization is implemented by FP16 *exponent field adjustment* (no pow/div).
+    - If exponent adjustment would underflow into subnormal/zero: FTZ => 0.
+    - If exponent adjustment would exceed max normal exponent field (30): raise FPVOverflowError.
     """
 
-    hiddenSize: int = 4096
-    headNum: int = 32
-    seqLen: int = 8192
-    lat: int = 3
+<<<<<<< HEAD
+    def __init__(self) -> None:
+=======
+    def __init__(self,seqLen) -> None:
+>>>>>>> orgin/main
+        # Reminder settings: treat overflow/div/invalid as exceptions, underflow ignored (per your reminder).
+        np.seterr(over="raise", divide="raise", invalid="raise", under="ignore")
 
-    sliceCnt: int = 0
-    colCnt: int = 0
-    QKFlag: bool = True
+        # Model parameters
+        self.hiddenSize: int = 4096
+        self.headNum: int = 32
+        self.seqLen: int = 8192
+        self.lat: int = 4
 
-    trgCnt: int = 0
-
-    QKbuf: np.ndarray = field(default_factory=lambda: np.zeros((32,), dtype=np.float16))
-    Vbuf: np.ndarray = field(default_factory=lambda: np.zeros((32,), dtype=np.float16))
-    accu: np.ndarray = field(init=False)
-
-    # Internal checker state
-    _expectedPhase: str = field(default="QK", init=False)  # "QK" then "V"
-    _vCallsRemainingInSlice: int = field(default=0, init=False)
-
-    def __post_init__(self) -> None:
-        if self.seqLen % 32 != 0:
-            raise ValueError(f"seqLen must be divisible by 32, got seqLen={self.seqLen}")
         if self.hiddenSize % self.headNum != 0:
-            raise ValueError(
-                f"hiddenSize must be divisible by headNum, got {self.hiddenSize}/{self.headNum}"
-            )
+            raise ValueError("hiddenSize must be divisible by headNum")
+        self.Dh: int = self.hiddenSize // self.headNum
 
-        dh = self.dh
-        self.accu = np.zeros((dh,), dtype=np.float16)
+        if self.seqLen % 32 != 0:
+            raise ValueError("seqLen must be divisible by 32")
+        self.slices: int = self.seqLen // 32
 
-        # For a fresh slice, we expect 1 QK call then Dh V calls.
-        self._expectedPhase = "QK"
-        self._vCallsRemainingInSlice = dh
+        # Control state
+        self.sliceCnt: int = 0
+        self.colCnt: int = 0
+        self.QKFlag: int = 1  # initialized high
 
-        # Basic sanity of counters
-        self._assert_ctrl_ranges()
+        # Cycle counter
+        self.trgCnt: int = 0
 
-    @property
-    def dh(self) -> int:
-        """Head dimension (hiddenSize/headNum)."""
-        return self.hiddenSize // self.headNum
+        # Storage
+        self.QKbuf: np.ndarray = np.zeros((32,), dtype=np.float16)
+        self.Vdeq: np.ndarray = np.zeros((32,), dtype=np.float16)
+        self.accu: np.ndarray = np.zeros((self.Dh,), dtype=np.float16)
 
-    @property
-    def sliceMax(self) -> int:
-        """Maximum sliceCnt value."""
-        return (self.seqLen // 32) - 1
+        # Input latches (to be set before one_operation)
+        self.inNum: Optional[Union[np.ndarray, Sequence[Union[np.float16, float, int]]]] = None
+        self.dqFac: Optional[int] = None  # signed int, 5-bit in HW
 
-    def _assert_ctrl_ranges(self) -> None:
-        if not (0 <= self.sliceCnt <= self.sliceMax):
-            raise SpecViolationError(f"sliceCnt out of range: {self.sliceCnt}")
-        if not (0 <= self.colCnt <= self.dh - 1):
-            raise SpecViolationError(f"colCnt out of range: {self.colCnt}")
+        # Output signals
+        self.outValid: bool = False
+        self.outCol: int = 0
 
-    def _checker_before_call(self) -> None:
+        # Internal schedule checker (enforce: per slice, 1x QK then Dh x V)
+        self._phase: str = "QK"  # "QK" or "V"
+        self._expected_v_col: int = 0
+        self._expected_slice: int = 0
+
+    # ------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------
+
+<<<<<<< HEAD
+    def set_inputs(self, *, inNum: Sequence[Union[np.float16, float, int]], dqFac: int) -> None:
+=======
+    def set_inputs(self, *, inNum: Sequence[Union[np.float16, float, int]], dqFac: Sequence[Union[list[int], np.ndarray]]) -> None:
+>>>>>>> orgin/main
         """
-        Assert the per-slice sequence rule:
-        - Exactly 1 QK call then Dh V calls.
-        """
-        if self._expectedPhase == "QK":
-            if not self.QKFlag:
-                raise SpecViolationError(
-                    "Spec violation: expected QKFlag==True for the QK-load call of the slice."
-                )
-            if self._vCallsRemainingInSlice != self.dh:
-                raise SpecViolationError(
-                    "Internal checker inconsistency: vCallsRemainingInSlice should equal Dh at slice start."
-                )
-
-        elif self._expectedPhase == "V":
-            if self.QKFlag:
-                raise SpecViolationError(
-                    "Spec violation: expected QKFlag==False during V-compute calls."
-                )
-            if self._vCallsRemainingInSlice <= 0:
-                raise SpecViolationError(
-                    "Spec violation: too many V calls in a slice (exceeded Dh)."
-                )
-        else:
-            raise SpecViolationError(f"Internal checker: unknown phase {self._expectedPhase!r}")
-
-    def _checker_after_call(self) -> None:
-        """
-        Update checker expectations after a successful call.
-        """
-        if self._expectedPhase == "QK":
-            # After QK load, we must see Dh V calls
-            self._expectedPhase = "V"
-            self._vCallsRemainingInSlice = self.dh
-        else:
-            # Consumed one V call
-            self._vCallsRemainingInSlice -= 1
-            if self._vCallsRemainingInSlice == 0:
-                # Next call starts a new slice => expect QK
-                self._expectedPhase = "QK"
-                self._vCallsRemainingInSlice = self.dh
-
-    def one_operation(self, inNum: Iterable[np.float16] | np.ndarray) -> np.float16:
-        """
-        Execute one cycle-equivalent operation.
+        Set the inputs for the next one_operation() call.
 
         Parameters
         ----------
-        inNum : iterable/np.ndarray
-            32 FP16 numbers.
+        inNum : sequence
+            Length-32 vector.
+            - If QKFlag==1 for the coming cycle: elements are interpreted as fp16 softmax values.
+            - If QKFlag==0 for the coming cycle: elements are interpreted as int8 V values.
+<<<<<<< HEAD
+        dqFac : int
+=======
+        dqFac : sequence in (32,)
+>>>>>>> orgin/main
+            Signed shift count applied to FP16 biased exponent during V dequantization.
+
+        Notes
+        -----
+        The caller is responsible for providing the correct data type per phase, consistent with QKFlag.
+        """
+        arr = np.asarray(inNum)
+<<<<<<< HEAD
+        if arr.shape != (32,):
+            raise ValueError("inNum must have shape (32,)")
+        self.inNum = arr
+        self.dqFac = int(dqFac)
+=======
+        arr1 = np.asarray(dqFac)
+        if arr.shape != (32,) or arr1.shape != (32,):
+            raise ValueError("inNum and dqFac must have shape (32,)")
+        self.inNum = arr
+        self.dqFac = arr1
+>>>>>>> orgin/main
+
+    def one_operation(self) -> np.float16:
+        """
+        Perform one cycle operation.
 
         Returns
         -------
         np.float16
-            prtSum (partial sum). Note: it is the FINAL output element only when:
-              - QKFlag == False (V-compute cycle), and
-              - sliceCnt == sliceMax (last slice of the row).
-            The memory controller is assumed to read QKFlag/sliceCnt/colCnt as control signals.
+            prtSum (partialSum in your spec). For QK cycles this is 0 (harmless).
+            For V cycles this is the updated accumulator value for the current colCnt.
+
+        Side effects
+        ------------
+        - Updates QKbuf or accu[colCnt] depending on QKFlag.
+        - Updates outValid/outCol and control state (sliceCnt/colCnt/QKFlag).
+        - Increments trgCnt by 1.
         """
-        self._assert_ctrl_ranges()
-        self._checker_before_call()
+        prtSum = self.eval()
 
-        prtSum = self.eval(inNum)
+        if self.QKFlag == 0:
+            self.accu[self.colCnt] = prtSum
 
-        # Spec hygiene: only mutate accu on V-compute cycles.
-        if not self.QKFlag:
-            self.accu[self.colCnt] = np.float16(prtSum)
-
+<<<<<<< HEAD
         self.update_ctrl()
         self.trgCnt += 1
 
-        self._checker_after_call()
-        return np.float16(prtSum)
+        return prtSum
+=======
+        cpColCnt = self.colCnt
+        self.update_ctrl()
+        self.trgCnt += 1
 
-    def eval(self, inNum: Iterable[np.float16] | np.ndarray) -> np.float16:
+        return prtSum,cpColCnt
+>>>>>>> orgin/main
+
+    # ------------------------------------------------------------
+    # Core operations
+    # ------------------------------------------------------------
+
+    def eval(self) -> np.float16:
         """
-        Evaluate the datapath for the current cycle.
+        Evaluate the datapath for this cycle.
 
-        - If QKFlag: load QKbuf, return current accu[colCnt] (logically consistent no-op).
-        - Else: load Vbuf, compute dot32(QKbuf, Vbuf) with FP16 adder tree,
-          then add to accu[colCnt] in FP16.
+        Returns
+        -------
+        np.float16
+            partialSum per the spec.
+
+        Raises
+        ------
+        SpecViolationError
+            If the per-slice schedule order is violated.
+        FPVOverflowError
+            If exponent adjustment would exceed FP16 max normal exponent field.
         """
-        vec = np.asarray(list(inNum), dtype=np.float16)
-        if vec.shape != (32,):
-            raise SpecViolationError(f"inNum must be 32 elements, got shape {vec.shape}")
+        if self.inNum is None or self.dqFac is None:
+            raise SpecViolationError("Inputs not set before eval()")
 
-        if self.QKFlag:
-            self.QKbuf = vec
-            partialSum = np.float16(self.accu[self.colCnt])
-            return np.float16(partialSum)
+        # Enforce schedule: per slice, 1 QK op then Dh V ops.
+        self._assert_schedule()
 
-        self.Vbuf = vec
+        if self.QKFlag == 1:
+            # Load QKbuf
+            self.QKbuf = np.asarray(self.inNum, dtype=np.float16)
+            partialSum = np.float16(0.0)  # harmless, to keep return type consistent
+            return partialSum
 
-        # Multiply lane-wise in FP16
-        prod = fp16(self.Vbuf * self.QKbuf)  # elementwise multiply then quantize to FP16
+        # V path: dequantize by FP16 exponent adjustment (FTZ on subnormals)
+<<<<<<< HEAD
+        dqFac = int(self.dqFac)
+=======
+        dqFac = self.dqFac
+>>>>>>> orgin/main
 
-        # Reduce using FP16 adder tree
+        # Interpret inNum as int8 for V input (spec says 32*int8 expected)
+        v_int8 = np.asarray(self.inNum, dtype=np.int8)
+
+        for i in range(32):
+            v_fp16 = np.float16(v_int8[i])  # int8 -> fp16 (exact for [-128..127])
+            f = fp16_unpack(v_fp16)
+
+            # If original is zero/subnormal, FTZ => 0
+            if f.exponent == 0:
+                self.Vdeq[i] = np.float16(0.0)
+                continue
+
+<<<<<<< HEAD
+            fpVExpo = int(f.exponent) - dqFac  # biased exponent adjustment
+=======
+            fpVExpo = int(f.exponent) - int(dqFac[i])  # biased exponent adjustment
+>>>>>>> orgin/main
+
+            # FTZ behavior: if exponent field would be <= 0, flush to zero.
+            if fpVExpo <= 0:
+                self.Vdeq[i] = np.float16(0.0)
+            elif fpVExpo > 30:
+                # Spec comment: "NaN occur" -> raise
+                raise FPVOverflowError(
+<<<<<<< HEAD
+                    f"Exponent adjust overflow: exp={f.exponent}, dqFac={dqFac}, fpVExpo={fpVExpo}"
+=======
+                    f"Exponent adjust overflow: exp={f.exponent}, dqFac={dqFac[i]}, fpVExpo={fpVExpo}"
+>>>>>>> orgin/main
+                )
+            else:
+                self.Vdeq[i] = fp16_pack(f.signed, fpVExpo, f.mantissa)
+
+        # Dot + accumulator (all FP16)
+        prod = np.asarray(self.Vdeq * self.QKbuf, dtype=np.float16)
         dot = adder_tree_fp16(prod)
-
-        # Accumulate into accu[colCnt] in FP16 (quantize the add)
-        partialSum = fp16(np.float16(dot) + np.float16(self.accu[self.colCnt]))
-        return np.float16(partialSum)
+        partialSum = np.float16(dot + np.float16(self.accu[self.colCnt]))
+        return partialSum
 
     def update_ctrl(self) -> None:
         """
-        Control update per spec pseudocode.
+        Update control FSM and output flags per spec pseudocode.
         """
-        lastCol = (self.dh - 1)
-        lastSlice = self.sliceMax
+        # Output flags are derived from the *current* state (before transitions)
+        self.outValid = (self.QKFlag == 0) and (self.sliceCnt == (self.slices - 1))
+        self.outCol = int(self.colCnt)
 
-        if self.colCnt == lastCol:
-            self.QKFlag = True
+        if self.QKFlag == 1:
+            self.QKFlag = 0
+            # colCnt stays (should be 0 at the start of V phase)
+        elif self.colCnt == (self.Dh - 1):
+            self.QKFlag = 1
             self.colCnt = 0
 
-            if self.sliceCnt == lastSlice:
+            if self.sliceCnt == (self.slices - 1):
                 self.sliceCnt = 0
                 self.accu[:] = np.float16(0.0)
             else:
                 self.sliceCnt += 1
-
-        elif not self.QKFlag:
+        else:
             self.colCnt += 1
 
-        else:
-            # QKFlag is True and we are not at last column => next cycle is V compute
-            self.QKFlag = False
+    # ------------------------------------------------------------
+    # Internal schedule checker
+    # ------------------------------------------------------------
 
-        self._assert_ctrl_ranges()
-
-    # Convenience helpers for external logic / testing
-    def is_v_cycle(self) -> bool:
-        """True if current cycle is a V-compute cycle (QKFlag==False)."""
-        return not self.QKFlag
-
-    def is_final_output_cycle(self) -> bool:
+    def _assert_schedule(self) -> None:
         """
-        True if the returned value corresponds to the final output element for the row:
-        (V-compute cycle) AND (sliceCnt == lastSlice).
+        Internal assertion checker enforcing:
+          per slice: 1x QK call then Dh x V calls.
+
+        This checks:
+        - sliceCnt aligns with expected slice index
+        - QKFlag matches expected phase
+        - during V phase, colCnt marches 0..Dh-1
         """
-        return (not self.QKFlag) and (self.sliceCnt == self.sliceMax)
+        if self.sliceCnt != self._expected_slice:
+            raise SpecViolationError(
+                f"sliceCnt mismatch: got {self.sliceCnt}, expected {self._expected_slice}"
+            )
+
+        if self._phase == "QK":
+            if self.QKFlag != 1:
+                raise SpecViolationError("Expected QK phase but QKFlag!=1")
+            if self.colCnt != 0:
+                # Per spec, after finishing a slice, colCnt resets to 0 before next QK.
+                raise SpecViolationError(f"Expected colCnt==0 at QK phase, got {self.colCnt}")
+            # After this eval, phase should move to V (Dh entries)
+            self._phase = "V"
+            self._expected_v_col = 0
+            return
+
+        # V phase
+        if self.QKFlag != 0:
+            raise SpecViolationError("Expected V phase but QKFlag!=0")
+        if self.colCnt != self._expected_v_col:
+            raise SpecViolationError(
+                f"V phase colCnt mismatch: got {self.colCnt}, expected {self._expected_v_col}"
+            )
+
+        # After consuming this V op, advance expected col
+        self._expected_v_col += 1
+        if self._expected_v_col >= self.Dh:
+            # Next op must be QK of the next slice
+            self._phase = "QK"
+            if self._expected_slice == (self.slices - 1):
+                self._expected_slice = 0
+            else:
+                self._expected_slice += 1
 
 
-####################################################
-#######         verification helpers          ######
-####################################################
-def golden_row_v_softmax_tree_blocked(
-    softmax_row: np.ndarray, v_mat: np.ndarray
-) -> np.ndarray:
+# ============================================================
+# Reference computation for checking correctness
+# ============================================================
+
+def deq_int8_to_fp16_with_expadj(v_int8: np.ndarray, dqFac: int) -> np.ndarray:
     """
-    Golden computation that matches QKV spec:
-
-      For each slice (32 tokens):
-        dot32(d) = adder_tree_fp16( fp16(Vslice[:,d] * QKslice[:]) )
-        accu[d]  = fp16(accu[d] + dot32(d))
+    Reference: apply the same FP16 exponent-adjust dequantization used in QKV.eval().
 
     Parameters
     ----------
-    softmax_row : np.ndarray
-        Shape (seqLen,), dtype float16.
-    v_mat : np.ndarray
-        Shape (seqLen, Dh), dtype float16.
+    v_int8 : np.ndarray
+        Shape (N,), dtype int8.
+    dqFac : int
+        Signed exponent shift count.
 
     Returns
     -------
     np.ndarray
-        Shape (Dh,), dtype float16.
+        Shape (N,), dtype float16.
     """
-    soft = np.asarray(softmax_row, dtype=np.float16)
-    v = np.asarray(v_mat, dtype=np.float16)
+    out = np.zeros_like(v_int8, dtype=np.float16)
+    for i in range(v_int8.size):
+        v_fp16 = np.float16(np.int8(v_int8[i]))
+        f = fp16_unpack(v_fp16)
 
-    if soft.ndim != 1:
-        raise ValueError("softmax_row must be 1-D")
-    if v.ndim != 2:
-        raise ValueError("v_mat must be 2-D")
-    if v.shape[0] != soft.shape[0]:
-        raise ValueError("seqLen mismatch between softmax_row and v_mat")
-    if soft.shape[0] % 32 != 0:
-        raise ValueError("seqLen must be divisible by 32")
+        if f.exponent == 0:
+            out[i] = np.float16(0.0)
+            continue
 
-    seqLen = soft.shape[0]
-    dh = v.shape[1]
-    slices = seqLen // 32
-
-    out = np.zeros((dh,), dtype=np.float16)
-
-    for s in range(slices):
-        qk = soft[s * 32 : (s + 1) * 32]  # (32,)
-        for d in range(dh):
-            vs = v[s * 32 : (s + 1) * 32, d]  # (32,)
-            prod = fp16(vs * qk)              # FP16 multiply + quantize
-            dot = adder_tree_fp16(prod)       # FP16 tree reduce
-            out[d] = np.float16(fp16(np.float16(out[d]) + np.float16(dot)))  # FP16 accumulate
+        fpVExpo = int(f.exponent) - int(dqFac)
+        if fpVExpo <= 0:
+            out[i] = np.float16(0.0)
+        elif fpVExpo > 30:
+            raise FPVOverflowError(f"Overflow in reference deq: exp={f.exponent}, dqFac={dqFac}")
+        else:
+            out[i] = fp16_pack(f.signed, fpVExpo, f.mantissa)
     return out
 
 
-def run_one_row(qkv: QKV, softmax_row: np.ndarray, v_mat: np.ndarray) -> np.ndarray:
+def main() -> None:
     """
-    Drive QKV for exactly one attention output row and return the final Dh outputs.
-
-    Assumes qkv begins at a row boundary:
-      QKFlag==True, sliceCnt==0, colCnt==0
+    Minimal pattern to check:
+    - control sequence correctness (asserted internally)
+    - numeric equivalence (FP16) between streamed accumulation and a reference computation
+    - outValid/outCol behavior on the last slice
     """
-    Dh = qkv.dh
-    seqLen = qkv.seqLen
-    slices = seqLen // 32
-
-    if not (qkv.QKFlag and qkv.sliceCnt == 0 and qkv.colCnt == 0):
-        raise SpecViolationError(
-            f"Driver expects row-start state, got QKFlag={qkv.QKFlag}, "
-            f"sliceCnt={qkv.sliceCnt}, colCnt={qkv.colCnt}"
-        )
-
-    captured_final = np.zeros((Dh,), dtype=np.float16)
-
-    for sliceCnt in range(slices):
-        # 1x QK load
-        qk_slice = softmax_row[sliceCnt * 32 : (sliceCnt + 1) * 32]
-        _ = qkv.one_operation(qk_slice)
-
-        # Dh x V compute
-        for d in range(Dh):
-            v_slice = v_mat[sliceCnt * 32 : (sliceCnt + 1) * 32, d]
-            val = qkv.one_operation(v_slice)
-
-            if sliceCnt == (slices - 1):
-                captured_final[d] = np.float16(val)
-
-    if not (qkv.QKFlag and qkv.sliceCnt == 0 and qkv.colCnt == 0):
-        raise SpecViolationError(
-            "Spec violation: expected row reset after finishing a row "
-            f"(QKFlag={qkv.QKFlag}, sliceCnt={qkv.sliceCnt}, colCnt={qkv.colCnt})"
-        )
-
-    return captured_final
-
-
-def mixed_err(a: np.ndarray, b: np.ndarray) -> float:
-    """
-    Robust scalar error metric:
-      max_abs_diff / max(1e-3, max_abs(b))
-    Avoids blowing up when b is near zero.
-    """
-    diff = a.astype(np.float32) - b.astype(np.float32)
-    abs_err = float(np.max(np.abs(diff)))
-    scale = float(max(1e-3, np.max(np.abs(b.astype(np.float32)))))
-    return abs_err / scale
-
-
-def make_softmax_row_fp16(rng: np.random.Generator, seqLen: int) -> np.ndarray:
-    """
-    Generate a random "softmax-like" row (nonnegative, sums to 1) in FP16-ish manner.
-    This is just for testing; it is not part of the QKV spec.
-    """
-    row = fp16(rng.random(seqLen))
-    denom = np.float16(0.0)
-    for k in range(seqLen):
-        denom = np.float16(denom + np.float16(row[k]))
-    return fp16(row / denom)
-
-
-def main(N_ROWS = 8) -> None:
     np.seterr(over="raise", divide="raise", invalid="raise", under="ignore")
 
     rng = np.random.default_rng(0)
     qkv = QKV()
 
-    Dh = qkv.dh
+    Dh = qkv.Dh
     seqLen = qkv.seqLen
-    slices = seqLen // 32
+    slices = qkv.slices
 
-    errs = []
-    for r in range(N_ROWS):
-        soft = make_softmax_row_fp16(rng, seqLen)
-        v = fp16(rng.normal(0.0, 1.0, size=(seqLen, Dh)))
+    # Build one "softmax row" (non-negative, normalized) in FP16.
+    softmax_row = fp16(rng.random(seqLen))
+    denom = np.float16(0.0)
+    for k in range(seqLen):
+        denom = np.float16(denom + softmax_row[k])
+    softmax_row = fp16(softmax_row / denom)
 
-        out = run_one_row(qkv, soft, v)
-        gold = golden_row_v_softmax_tree_blocked(soft, v)
+    # Build V as int8: (seqLen, Dh)
+    # Keep values modest to reduce overflow risk in exp-adjust for random dqFac.
+    v_mat = rng.integers(low=-32, high=32, size=(seqLen, Dh), dtype=np.int16).astype(np.int8)
 
-        e = mixed_err(out, gold)
-        errs.append(e)
+    # Pick a dqFac (signed 5-bit). This is a stress knob: positive => more FTZ.
+    dqFac = int(rng.integers(low=-3, high=6))
 
-        print(f"[Row {r}] mixed_err={e:.6e}")
+    # Drive the QKV schedule exactly: for each slice: 1 QK load then Dh V ops
+    outputs_streamed: List[np.float16] = []
+    outcols_streamed: List[int] = []
 
-    max_e = max(errs) if errs else 0.0
-    print("=== PATTERN CHECK: QKV N rows ===")
-    print(f"N_ROWS={N_ROWS}, max_mixed_err={max_e:.6e}")
+    for s in range(slices):
+        # QK load op
+        qk_slice = softmax_row[s * 32 : (s + 1) * 32]
+        qkv.set_inputs(inNum=qk_slice, dqFac=dqFac)
+        _ = qkv.one_operation()
 
-    # Threshold: tune based on how strictly you want to match the exact tree.
-    assert max_e < 5e-2, "At least one row mismatched too much."
+        # Dh V ops for this slice
+        for d in range(Dh):
+            v_block = v_mat[s * 32 : (s + 1) * 32, d]
+            qkv.set_inputs(inNum=v_block, dqFac=dqFac)
+            prt = qkv.one_operation()
 
-    expected_calls = N_ROWS * slices * (1 + Dh)
-    print(f"trgCnt={qkv.trgCnt}, expected_calls={expected_calls}")
-    assert qkv.trgCnt == expected_calls, "trgCnt mismatch."
+            # Collect final outputs only when outValid asserts (last slice only)
+            if qkv.outValid:
+                outputs_streamed.append(prt)
+                outcols_streamed.append(qkv.outCol)
+
+    # We should have exactly Dh outputs, with outCol walking 0..Dh-1
+    if len(outputs_streamed) != Dh:
+        raise AssertionError(f"Expected {Dh} valid outputs, got {len(outputs_streamed)}")
+
+    if outcols_streamed != list(range(Dh)):
+        raise AssertionError(f"outCol sequence mismatch: got {outcols_streamed[:10]} ...")
+
+    # Reference computation:
+    # For each d: sum_k softmax_row[k] * deq(v_mat[k,d], dqFac) using the same exp-adjust logic.
+    ref = np.zeros((Dh,), dtype=np.float16)
+    for d in range(Dh):
+        v_deq = deq_int8_to_fp16_with_expadj(v_mat[:, d], dqFac)
+        # FP16 dot via slice-wise tree reductions to mimic the streaming behavior more closely.
+        acc = np.float16(0.0)
+        for s in range(slices):
+            a = softmax_row[s * 32 : (s + 1) * 32]
+            b = v_deq[s * 32 : (s + 1) * 32]
+            dot = adder_tree_fp16(fp16(a * b))
+            acc = np.float16(acc + dot)
+        ref[d] = acc
+
+    got = np.asarray(outputs_streamed, dtype=np.float16)
+
+    # Exact FP16 equality should hold because we used identical operations/order on both sides.
+    if not np.array_equal(got, ref):
+        # Provide a helpful diff summary
+        mismatch = np.nonzero(got != ref)[0]
+        i0 = int(mismatch[0])
+        raise AssertionError(
+            f"Mismatch at col {i0}: got={got[i0]} ref={ref[i0]} "
+            f"(total mismatches={mismatch.size})"
+        )
+
+    print("PASS: schedule + numeric checks OK.")
+    print(f"dqFac={dqFac}, trgCnt={qkv.trgCnt}, lat={qkv.lat}")
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     main()
+=======
+    main()
+>>>>>>> orgin/main

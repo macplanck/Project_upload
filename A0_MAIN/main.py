@@ -1,7 +1,10 @@
 import A4_MEM.A0_MEM.sram as sram
 import A4_MEM.A0_MEM.dram as dram
 
+<<<<<<< HEAD
 import A2_SELFATT.QKVSM as qkvsm
+=======
+>>>>>>> orgin/main
 import A2_SELFATT.QK as qk
 import A2_SELFATT.QKV as qkv
 import A2_SELFATT.SMD as smd
@@ -38,8 +41,12 @@ if __name__ == "__main__":
     instQK     = qk.QK(seqLen=SEQLEN)
     instSMSM   = smsm.SMSM(seqLen=SEQLEN)
     instSMD    = smd.SMD(seqLen=SEQLEN)
+<<<<<<< HEAD
     instQKV    = qkv.QKV(seqLen=SEQLEN)
     instQKVSM  = qkvsm.QKVSM(seqLen=SEQLEN)
+=======
+    instQKV    = qkv.QKV(seqLen = SEQLEN)
+>>>>>>> orgin/main
     instSramSP = sram.sram_sp
     instDram   = dram.dram
 
@@ -134,6 +141,7 @@ if __name__ == "__main__":
                             else:
                                 instQKV.set_inputs(inNum=instSramSP['chunkV'][instQKV.colCnt][SMDCnt*32:SMDCnt*32+32], dqFac=instSramSP['deqV'][SMDCnt*32:SMDCnt*32+32]) # current dqFac input doesn't affect the result
                                 QKVRslt, VColCnt = instQKV.one_operation()
+<<<<<<< HEAD
 
                                 # sum max searching
                                 if (instQKV.outValid):
@@ -147,12 +155,17 @@ if __name__ == "__main__":
                                         instSramSP['qkvSum'][QKVCnt] = qkvSumReg
                                         instSramSP['qkvMax'][QKVCnt] = qkvMaxReg
 
+=======
+>>>>>>> orgin/main
                                 print(f"progress: QKVrow.{QKVCnt:5d}, seq slice.{SMDCnt:5d}, input with V at NO.{VColCnt+1:3d}/{instQK.hiddenSize//instQK.headNum}",end="\r")
 
                             if (i == instQK.headNum - 1 and j == instQK.seqLen - 1 and m == instQK.seqLen - 1 and l == instQK.hiddenSize//instQK.headNum//32 - 1):
                                 latOvHdTmp3 += instQKV.lat
+<<<<<<< HEAD
                                 latOvHdTmp3 += instQKVSM.lat
                                 latOvHdTmp3 += 1 # write back t0 qkvSum and qkvMax SRAM
+=======
+>>>>>>> orgin/main
 
                         # advance SMDCnt
                         if (VColCnt == (instQK.hiddenSize // instQK.headNum - 1) or TEST == "SMD"):
@@ -219,6 +232,7 @@ if __name__ == "__main__":
             else:
                 instQKV.set_inputs(inNum=instSramSP['chunkV'][instQKV.colCnt][SMDCnt*32:SMDCnt*32+32], dqFac=instSramSP['deqV'][SMDCnt*32:SMDCnt*32+32]) # current dqFac input doesn't affect the result
                 QKVRslt, VColCnt = instQKV.one_operation()
+<<<<<<< HEAD
                 
                 # sum max searching
                 if (instQKV.outValid):
@@ -232,13 +246,19 @@ if __name__ == "__main__":
                         instSramSP['qkvSum'][QKVCnt] = qkvSumReg
                         instSramSP['qkvMax'][QKVCnt] = qkvMaxReg
 
+=======
+>>>>>>> orgin/main
                 print(f"progress: QKVrow.{QKVCnt:5d}, seq slice.{SMDCnt:5d}, input with V at NO.{VColCnt+1:3d}/{instQK.hiddenSize//instQK.headNum}",end="\r")
                 # print(f"j:{j}, l:{l}, m:{m}")
 
             if (SMDQta == 1 and SMDCnt == (instQK.seqLen//32)-1 and QKVCnt == instQK.seqLen - 1):
+<<<<<<< HEAD
                 latOvHdTmp2 += instQKV.lat
                 latOvHdTmp2 += instQKVSM.lat
                 latOvHdTmp2 += 1 # write back t0 qkvSum and qkvMax SRAM
+=======
+                latOvHdTmp2 += instSMD.lat
+>>>>>>> orgin/main
             else:
                 latOvHdTmp2 += 1
 

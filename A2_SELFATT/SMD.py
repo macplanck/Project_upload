@@ -141,7 +141,11 @@ class SMD:
         Q1ExpoError, Fp16NumericError
         """
         if not (isinstance(inNmn, np.ndarray) and inNmn.shape == (32,) and inNmn.dtype == np.float16):
+<<<<<<< HEAD
             raise ValueError("inNmn must be np.ndarray(dtype=np.float16, shape=(32,))")
+=======
+            raise ValueError(f"inNmn must be np.ndarray(dtype=np.float16, shape=(32,)), got {inNmn.shape} in datatype {inNmn.dtype}")
+>>>>>>> orgin/main
 
         if self.colCnt == 0:
             if inDmn is None:
@@ -153,9 +157,15 @@ class SMD:
 
             self.smExp = int(inExp)
             self.smDmn = np.float16(inDmn)
+<<<<<<< HEAD
         else:
             if (inExp is not None) or (inDmn is not None):
                 raise NewRowInfoError("inExp/inDmn provided when colCnt != 0")
+=======
+        # else:
+        #     if (inExp is not None) or (inDmn is not None):
+        #         raise NewRowInfoError("inExp/inDmn provided when colCnt != 0")
+>>>>>>> orgin/main
 
         new_div = self.eval(inNmn)
         self.update_ctrl()
