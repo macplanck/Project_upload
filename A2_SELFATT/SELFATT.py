@@ -1,11 +1,11 @@
 import A4_MEM.A0_MEM.sram as sram
 import A4_MEM.A0_MEM.dram as dram
 
-import A2_SELFATT.QKVSM as qkvsm
-import A2_SELFATT.QK as qk
-import A2_SELFATT.QKV as qkv
-import A2_SELFATT.SMD as smd
-import A2_SELFATT.SMSM as smsm
+import QKVSM as qkvsm
+import QK as qk
+import QKV as qkv
+import SMD as smd
+import SMSM as smsm
 import numpy as np
 
 # execution instruction:
