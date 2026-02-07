@@ -58,14 +58,14 @@
 
 
         "qkv_max": {
-            "sram_X": 64,
+            "sram_X": 8192,
             "type": "int",
             "sign": "signed",
             "range": 4,
             "bias": 14
         },
         "qkv_sum": {
-            "sram_X": 64,
+            "sram_X": 8192,
             "type": "int",
             "sign": "unsign",
             "range": 10,
@@ -81,7 +81,7 @@
         },
 
         "qkv_weightQ": {
-            "sram_X": 64,
+            "sram_X": 4096,
             "sram_Y": 2,
             "type": "int",
             "sign": "unsign",
@@ -89,7 +89,7 @@
             "bias": 0
         },
         "qkv_weightK": {
-            "sram_X": 64,
+            "sram_X": 4096,
             "sram_Y": 2,
             "type": "int",
             "sign": "unsign",
@@ -97,7 +97,7 @@
             "bias": 0
         },
         "qkv_weightV": {
-            "sram_X": 64,
+            "sram_X": 4096,
             "sram_Y": 2,
             "type": "int",
             "sign": "unsign",
