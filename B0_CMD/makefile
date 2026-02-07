@@ -1,22 +1,19 @@
-.PHONY: qkv_gen qkv_clean mlp_test mat_mul mat_verify mem_combine mem_clean mem_init mem_test mem_func test
+.PHONY: qkv_gen mlp_test mat_mul mat_verify mem_combine mem_init mem_test mem_func test clean
 
 ###################################################
 ###             GLOBAL Parameters               ###
 ###################################################
 path_mem = A4_MEM/A0_MEM
 
-
 ###################################################
 ###            Simulation Command               ###
 ###################################################
 #-------------- QKV --------------
 QKV_GEN = python3 -m A1_QKV.${FILE} | tee ${LOG}
-QKV_CLEAN = rm -rf A1_QKV/*.log
 
 #-------------- MEM --------------
 DRAM_COMB = cat A4_MEM/A1_INIT/dram.def A4_MEM/A1_INIT/dram_*.init > A4_MEM/A1_INIT/dram.py
 SRAM_COMB = cat A4_MEM/A1_INIT/sram.def A4_MEM/A1_INIT/sram_*.init > A4_MEM/A1_INIT/sram.py
-MEM_CLEAN = rm -rf A4_MEM/A1_INIT/*.${FILE} A4_MEM/A2_OUT/*.${FILE} A4_MEM/A1_INIT/dram.py${FILE} A4_MEM/A1_INIT/sram.py${FILE}
 
 MEM_INIT = python3 -m A4_MEM.A1_INIT.${MEM} \
 	--XLEN  ${XLEN}  \
@@ -43,8 +40,15 @@ MAT_VER = python3 -m A5_Utilis.A0_BITLINEAR.${FILE} \
 	--t ${TOKEN}   \
 	--w ${WEIGHT}  | tee ${LOG}
 
-#-------------- Test -------------
+#-------------- Else --------------
 TEST = python3 -m B2_TEST.${FILE}
+
+CLEAN = rm -rf \
+	${DIR}/A1_INIT/*.${FILE} \
+	${DIR}/A2_OUT/*.${FILE} \
+	${DIR}/A1_INIT/dram.py${FILE} \
+	${DIR}/A1_INIT/sram.py${FILE} \
+	${DIR}/*.${FILE}
 
 ###################################################
 ###                MAKE Command                 ###
@@ -52,8 +56,6 @@ TEST = python3 -m B2_TEST.${FILE}
 #-------------- QKV --------------
 qkv_gen:
 	cd ..  &&  ${QKV_GEN}
-qkv_clean:
-	cd ..  &&  ${QKV_CLEAN}
 
 #-------------- MLP --------------
 mlp_test:
@@ -68,8 +70,7 @@ mat_verify:
 mem_combine:
 	cd ..  &&  ${DRAM_COMB}
 	cd ..  &&  ${SRAM_COMB}
-mem_clean:
-	cd ..  &&  ${MEM_CLEAN}
+
 mem_init:
 	cd ..  &&  ${MEM_INIT}
 mem_test:
@@ -77,5 +78,8 @@ mem_test:
 mem_func:
 	cd ..  &&  ${MEM_FUNC}
 
+#-------------- Else --------------
 test:
 	cd ..  &&  ${TEST}
+clean:
+	cd ..  &&  ${CLEAN}

@@ -2,7 +2,7 @@
 ###        ARG PARAMETER           ###
 ######################################
 in_FILE=MLP_perf
-in_LOG=A3_MLP/30_mlp_test.log
+in_LOG=A3_MLP/30_mlp_perf.log
 
 ######################################
 ###          Make Command          ###

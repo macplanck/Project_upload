@@ -5,16 +5,9 @@ from A5_Utilis.B1_CAL.integer import LOD
 from A5_Utilis.B1_CAL.fp16_parts import f16_exp
 from A5_Utilis.B2_PERF.perf import PERF
 
-if PERF:
-    from A5_Utilis.A0_BITLINEAR.bitlinear_perf import Bitlinear
-    from A4_MEM.A0_MEM.sram_perf import sram_sp, sram_dp, SRAM
-    from A4_MEM.A0_MEM.dram_perf import dram
-else:
-    from A5_Utilis.A0_BITLINEAR.bitlinear import Bitlinear
-    from A4_MEM.A0_MEM.sram import sram_dp, sram_sp, peak_sram
-    from A4_MEM.A0_MEM.dram import dram
-    
-print("dram_finished")
+from A5_Utilis.A0_BITLINEAR.bitlinear import Bitlinear
+from A4_MEM.A0_MEM.sram import sram_dp, sram_sp, peak_sram
+from A4_MEM.A0_MEM.dram import dram
 
 ###################################################
 ###                MAIN CALLs                   ###
@@ -70,9 +63,6 @@ def MLP(vec_in, sum_in, max_in):
 
         range_token = (range_token[0] + proj_down.num_token, range_token[1] + proj_down.num_token)
 
-    print("****************************************")
-    print("*************** bitwise ****************")
-    print("****************************************")
     bitwise_max, _ = f16_exp(bitwise_max)
     bitwise_sum = np.float16(bitwise_sum ** 0.5)
 
@@ -86,19 +76,17 @@ def MLP(vec_in, sum_in, max_in):
 
 if __name__ == '__main__':
 
-    print("This program is Executed")
+    print("****************************************")
+    print("******* This program is Executed *******")
+    print("****************************************")
 
-    if PERF:
-        sram_in = sram_sp['mlp_test']
+    if PERF: 
+        print("Your should change PERF to run 11_mlp_test")
     else:
         sram_in = [ [i] for i in range(param.hidden_size)]
-    print(f"dram_out {dram['out_weight'].dram_X}")
+        print(f"dram_out {dram['out_weight'].dram_X}")
 
-    # print(sram_in)
-    down_token, down_sum, down_max = MLP(sram_in, 1, 1)
-    # print(down_token)
-
-    if PERF:
+        down_token, down_sum, down_max = MLP(sram_in, 1, 1)
         print(f"down CT count: {proj_down.cycle_count}")
         print(f"gate CT count: {proj_upGate.cycle_count}")
         print(f"out  CT count: {proj_out.cycle_count}")
