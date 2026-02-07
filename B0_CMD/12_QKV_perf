@@ -1,10 +1,10 @@
 ######################################
 ###        ARG PARAMETER           ###
 ######################################
-in_FILE=$1
-in_DIR=A4_MEM
+in_FILE=QKV_perf
+in_LOG=A1_QKV/12_QKV_perf.log
 
 ######################################
 ###          Make Command          ###
 ######################################
-make clean FILE=$in_FILE DIR=$in_DIR
+make qkv_gen FILE=$in_FILE LOG=$in_LOG
