@@ -217,7 +217,7 @@ class QKV:
         # Model parameters
         self.hiddenSize: int = 4096
         self.headNum: int = 32
-        self.seqLen: int = 8192
+        self.seqLen: int = seqLen
         self.lat: int = 4
 
         if self.hiddenSize % self.headNum != 0:
@@ -277,8 +277,11 @@ class QKV:
         """
         arr = np.asarray(inNum)
         arr1 = np.asarray(dqFac)
-        if arr.shape != (32,) or arr1.shape != (32,):
-            raise ValueError("inNum and dqFac must have shape (32,)")
+        if arr.shape != (32,):
+            raise ValueError(f"shape of inNum must be (32,), got {arr.shape} instead")
+
+        if arr1.shape != (32,):
+            raise ValueError(f"shape of dqFac must be (32,), got {arr1.shape} instead")
         self.inNum = arr
         self.dqFac = arr1
 

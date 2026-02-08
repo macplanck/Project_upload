@@ -29,10 +29,10 @@ class QKVSM:
         return finalSum, finalMax, outValid
     
     def eval (self, inSum:Sequence[np.float16], theSum: np.float16, theMax: np.float16, colMarker: int):
-        
+
         finalMax = inSum
         
-        finalSum = inSum
+        finalSum = inSum**2
 
         if (colMarker != 0):
             finalSum += theSum
@@ -43,4 +43,4 @@ class QKVSM:
         return finalSum, finalMax
 
     def update_ctrl (self, colMarker):
-        return colMarker == self.hiddenSize//self.headNum - 1
+        return colMarker == self.hiddenSize - 1
