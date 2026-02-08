@@ -32,8 +32,8 @@
         "bias": 0
     },
     "smExped": {
-        "dram_X": 64,
-        "dram_Y": 64,
+        "dram_X": 8192,
+        "dram_Y": 32,
         "type": "float",
         "sign": "signed",
         "range": 4,
