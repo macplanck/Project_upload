@@ -19,6 +19,15 @@ if __name__ == "main":
     # drain out the rest of the operation in SMD-QKV pipeline
     while (SELTATT.SMDQta != 0):
         SELTATT.SMDQKV(mode="rest", last=0, rowQ=31, verbose=verbose)
+
+    '''
+        the final outputs of SELTATTATT is returned from SMDQKV. Following variables are the variable that the output is saved at:
+        1. SELTATT.instSramSP["qkvEle"] (one token at a time)
+        2. SELTATT.qkvSumReg
+        3. SELTATT.qkvMaxReg
+        4. SELTATT.qkvSMValid (pull high for exact one cycle when it is valid)
+
+    '''
     
     if verbose:
         print("\n---- Rest of the stages has terminate its work sucessfully ----")
