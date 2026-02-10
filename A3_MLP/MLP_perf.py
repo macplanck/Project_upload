@@ -63,9 +63,6 @@ def MLP(vec_in, sum_in, max_in):
 
         range_token = (range_token[0] + proj_down.num_token, range_token[1] + proj_down.num_token)
 
-    print("****************************************")
-    print("*************** bitwise ****************")
-    print("****************************************")
     bitwise_max, _ = f16_exp(bitwise_max)
     bitwise_sum = np.float16(bitwise_sum ** 0.5)
 

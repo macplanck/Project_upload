@@ -66,10 +66,6 @@ class Bitlinear:
             vec_token += self.Bit_operation(vec_receive, sum_scale, max_scale)
             range_token = (range_token[0] + self.access_token, range_token[1] + self.access_token)
 
-        #++++++++++++++++++++++++++++++
-            self.cycle_count += 1 
-        #++++++++++++++++++++++++++++++
-
         ########################################
         ############## Get Weight ##############
         ########################################
@@ -96,10 +92,6 @@ class Bitlinear:
 
             if i == 0 or abs(bit_out[i]) > max_out:
                 max_out = abs(bit_out[i])
-
-        #++++++++++++++++++++++++++++++
-            self.cycle_count += 1 
-        #++++++++++++++++++++++++++++++
 
         return bit_out, sum_out, max_out
 

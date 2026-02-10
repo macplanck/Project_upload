@@ -23,7 +23,7 @@
         "range": 6561,
         "bias": 0
     },
-    "qkv_token": {
+    "token": {
         "dram_X": 4096,
         "dram_Y": 8192,
         "type": "int",
@@ -32,8 +32,8 @@
         "bias": 0
     },
     "smExped": {
-        "dram_X": 8192,
-        "dram_Y": 32,
+        "dram_X": 64,
+        "dram_Y": 64,
         "type": "float",
         "sign": "signed",
         "range": 4,
@@ -41,7 +41,7 @@
     },
     "quanK": {
         "dram_X": 4096,
-        "dram_Y": 8192,
+        "dram_Y": 64,
         "type": "int",
         "sign": "signed",
         "range": 3,
@@ -49,7 +49,7 @@
     },
     "quanQ": {
         "dram_X": 4096,
-        "dram_Y": 8192,
+        "dram_Y": 64,
         "type": "int",
         "sign": "signed",
         "range": 3,
@@ -57,7 +57,7 @@
     },
     "quanV": {
         "dram_X": 4096,
-        "dram_Y": 8192,
+        "dram_Y": 64,
         "type": "int",
         "sign": "signed",
         "range": 3,

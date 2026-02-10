@@ -1,4 +1,4 @@
-.PHONY: qkv_gen mlp_test mat_mul mat_verify mem_combine mem_init mem_test mem_func test clean
+.PHONY: main qkv_gen mlp_test mat_mul mat_verify mem_combine mem_init mem_test mem_func test clean
 
 ###################################################
 ###             GLOBAL Parameters               ###
@@ -8,6 +8,10 @@ path_mem = A4_MEM/A0_MEM
 ###################################################
 ###            Simulation Command               ###
 ###################################################
+
+#------------- Main --------------
+MAIN = python3 -m A0_MAIN.${FILE} | tee ${LOG}
+
 #-------------- QKV --------------
 QKV_GEN = python3 -m A1_QKV.${FILE} | tee ${LOG}
 
@@ -53,6 +57,10 @@ CLEAN = rm -rf \
 ###################################################
 ###                MAKE Command                 ###
 ###################################################
+#------------- Main --------------
+main:
+	cd ..  &&  ${MAIN}
+
 #-------------- QKV --------------
 qkv_gen:
 	cd ..  &&  ${QKV_GEN}

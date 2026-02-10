@@ -52,9 +52,9 @@ def QKV_gen():
             sram_sp['qkv_weightV'] = dram['qkv_weightV'].load_mem(pt_weight, (param.hidden_size, range_weight))
 
             # bit_out, sum_out, max_out = bitlinear.projection(sram_sp['qkv_token'], sram_sp['qkv_weightQ'])
-            q_token, q_sum, q_max = bitlinear.projection(sram_sp['qkv_token'], sram_sp['qkv_weightQ'], q_token, sum_scale, max_scale)
-            k_token, k_sum, k_max = bitlinear.projection(sram_sp['qkv_token'], sram_sp['qkv_weightK'], k_token, sum_scale, max_scale)
-            v_token, v_sum, v_max = bitlinear.projection(sram_sp['qkv_token'], sram_sp['qkv_weightV'], v_token, sum_scale, max_scale)
+            q_token, q_sum, q_max, cycle_count = bitlinear.projection(sram_sp['qkv_token'], sram_sp['qkv_weightQ'], q_token, sum_scale, max_scale)
+            k_token, k_sum, k_max, cycle_count = bitlinear.projection(sram_sp['qkv_token'], sram_sp['qkv_weightK'], k_token, sum_scale, max_scale)
+            v_token, v_sum, v_max, cycle_count = bitlinear.projection(sram_sp['qkv_token'], sram_sp['qkv_weightV'], v_token, sum_scale, max_scale)
 
             sram_sp['qkv_buf1_Q'] = q_token
             sram_sp['qkv_buf1_K'] = k_token

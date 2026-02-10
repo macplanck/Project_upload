@@ -1,0 +1,15 @@
+********************************************
+available cycles: 1056768
+require accesses: 14712832
+access bit: 13.922480620155039
+access weight: 2
+access  token: 2
+num weight: 2
+num  token: 16
+****************************************
+******* This program is Executed *******
+****************************************
+** 1 ** <A4_MEM.A0_MEM.sram_perf.SRAM object at 0x105b9b970>
+** 2 ** <A4_MEM.A0_MEM.sram_perf.SRAM object at 0x105ca6370>
+** 3 ** <A4_MEM.A0_MEM.sram_perf.SRAM object at 0x105ca63d0>
+cycle: 1048832

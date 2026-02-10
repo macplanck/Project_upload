@@ -16,6 +16,41 @@ proj_out        = Bitlinear(param.hidden_size, param.hidden_size)
 proj_upGate     = Bitlinear(param.hidden_size, param.intermediate_size)
 proj_down       = Bitlinear(param.intermediate_size, param.hidden_size)
 
+def MLP_bitwise(up_token, gate_token, up_max, gate_max):
+
+    range_token = (0, proj_down.num_token)
+    bitwise_token = []
+    bitwise_sum = 0
+    bitwise_max = 0
+
+    while range_token[0] < param.intermediate_size:
+
+        if range_token[1] > param.intermediate_size:
+            range_token = (range_token[0], param.intermediate_size)
+
+        up_reg   = [ up_token[i][0]    for i in range(range_token[0], range_token[1]) ]
+        gate_reg = [ gate_token[i][0]  for i in range(range_token[0], range_token[1]) ]
+
+        token_seg = [ [ up_t * gate_t * (2 ** up_max) * (2 ** gate_max) ]  for up_t, gate_t in zip(up_reg, gate_reg) ]
+        max_seg = max([  abs(t[0])    for t in token_seg  ])
+
+        sum_seg = sum([  t[0] * t[0]  for t in token_seg  ])
+
+        bitwise_token += token_seg.copy()
+        bitwise_sum += sum_seg
+
+        if range_token[0] == 0 or max_seg > bitwise_max:
+            bitwise_max = max_seg
+
+        range_token = (range_token[0] + proj_down.num_token, range_token[1] + proj_down.num_token)
+
+    bitwise_max, _ = f16_exp(bitwise_max)
+    bitwise_sum = np.float16(bitwise_sum ** 0.5)
+
+    return bitwise_token.copy(), bitwise_sum, bitwise_max
+
+
+
 ###################################################
 ###                TEST Program                 ###
 ###################################################
