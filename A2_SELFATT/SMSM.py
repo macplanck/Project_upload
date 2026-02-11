@@ -127,6 +127,7 @@ class SMSM:
 
     colCnt: int = 0
     trgCnt: int = 0
+    lat:    int = 3
 
     maxExp: int = -14
     sumDnm: np.float16 = np.float16(0.0)

@@ -4,13 +4,19 @@ import math
 import struct
 from pathlib import Path
 from A5_Utilis.B0_CONFIG.read_config import read_config
+from A5_Utilis.B2_PERF.perf import PERF
 
 mem_name = 'dram'
 
 BASE = Path(__file__).resolve().parent
 PATH_INIT = BASE
-PATH_DRAM = (BASE / "../../A5_Utilis/B0_CONFIG/config_dram.json")
-PATH_SRAM = (BASE / "../../A5_Utilis/B0_CONFIG/config_sram.json")
+
+if PERF:
+    PATH_DRAM = (BASE / "../../A5_Utilis/B2_PERF/config_dram.json")
+    PATH_SRAM = (BASE / "../../A5_Utilis/B2_PERF/config_sram.json")
+else:
+    PATH_DRAM = (BASE / "../../A5_Utilis/B0_CONFIG/config_dram.json")
+    PATH_SRAM = (BASE / "../../A5_Utilis/B0_CONFIG/config_sram.json")
 
 ###################################################
 ###            GLOBAL PARAMETERS                ###
@@ -25,7 +31,7 @@ Y_WIDTH = 1024
 RANGE = 256
 TYPE = 1
 SIGN = 0
-DIV = 4
+DIV = 1
 BIAS = 0
 
 LUT_NUM = 8
@@ -33,6 +39,9 @@ LUT_NUM = 8
 SEQLEN = 8192
 HEADNUM = 32
 HIDSIZE = 4096
+
+if PERF:
+    DIV = 4
 
 ###################################################
 ###               FILL FUNCTIONs                ###
@@ -60,12 +69,12 @@ def fill_2D():
                         f.write(f"[")
 
                     if RANGE:
-                        rand = random.uniform(0, RANGE)
+                        rand = random.uniform(0, RANGE) + BIAS
                     else:
                         rand = 0
 
                     if SIGN:
-                        rand = BIAS + rand - RANGE / 2
+                        rand = rand - RANGE / 2
                     if TYPE:
                         f.write(f"{int(rand):4d}")
                     else:
@@ -90,11 +99,11 @@ def fill_1D():
                 f.write(f"{mem_type}_t[\'{mem_name}\'] = [")
 
             if RANGE:
-                rand = random.uniform(0, RANGE)
+                rand = random.uniform(0, RANGE) + BIAS
             else:
                 rand = 0
             if SIGN:
-                rand = BIAS + rand - RANGE / 2
+                rand = rand - RANGE / 2
             if TYPE:
                 f.write(f"{int(rand):4d}")
             else:

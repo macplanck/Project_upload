@@ -1,0 +1,10 @@
+{
+    "weight": {
+        "dram_X": 32,
+        "dram_Y": 32
+    },
+    "token": {
+        "dram_X": 32,
+        "dram_Y": 32
+    }
+}

@@ -1,0 +1,82 @@
+.PHONY: qkv_gen mat_mul mat_verify mem_combine mem_cleanRam mem_clean mem_init mem_test mem_zip mem_func LUT_init 
+
+######################################
+# Set your desired file names
+######################################
+#-------------- MEM --------------
+path_mem = A4_MEM/A0_MEM
+
+######################################
+# Default Setting
+######################################
+
+
+######################################
+# Simulation Option and Command
+######################################
+
+#-------------- QKV --------------
+QKV_GEN = python3 -m A1_QKV.${FILE} | tee ${LOG}
+
+#------------ Utilis -------------
+MAT_MUL = python3 -m A5_Utilis.A0_BITLINEAR.${FILE}
+MAT_VER = python3 -m A5_Utilis.A0_BITLINEAR.${FILE} \
+	--f ${NAME}   \
+	--t ${TOKEN}   \
+	--w ${WEIGHT}  | tee ${LOG}
+
+#-------------- MEM --------------
+DRAM_COMB = cat A4_MEM/A1_INIT/dram.def A4_MEM/A1_INIT/dram_*.init > A4_MEM/A1_INIT/dram.py
+SRAM_COMB = cat A4_MEM/A1_INIT/sram.def A4_MEM/A1_INIT/sram_*.init > A4_MEM/A1_INIT/sram.py
+
+MEM_RMPY  = rm -rf A4_MEM/A1_INIT/dram.py A4_MEM/A1_INIT/sram.py
+#MEM_CLEAN = rm -rf A4_MEM/A1_INIT/*.init
+MEM_CLEAN = rm -rf A4_MEM/A1_INIT/*.${FILE} A4_MEM/A2_OUT/*.${FILE} A4_MEM/A1_INIT/dram.py${FILE} A4_MEM/A1_INIT/sram.py${FILE}
+
+MEM_INIT = python3 -m A4_MEM.A1_INIT.${MEM} \
+	--XLEN  ${XLEN}  \
+	--YLEN  ${YLEN}  \
+	--type  ${TYPE}  \
+	--sign  ${SIGN}  \
+	--name  ${NAME}  \
+	--range ${RANGE}
+
+MEM_TEST = python3 -m A4_MEM.A0_MEM.${MEM}
+MEM_FUNC = python3 -m A4_MEM.A3_TEST.${MEM} --test ${TEST}
+
+LUT_INIT = python3 -m A4_MEM.A1_INIT.${LUT} \
+	--LNUM ${LNUM} \
+	--name ${NAME}
+
+
+######################################
+# Make Command
+######################################
+
+#------------ Utilis -------------
+qkv_gen:
+	cd ..  &&  ${QKV_GEN}
+
+
+#------------ Utilis -------------
+mat_mul:
+	cd ..  &&  ${MAT_MUL}
+mat_verify:
+	cd ..  &&  ${MAT_VER}
+
+#-------------- MEM --------------
+mem_combine:
+	cd ..  &&  ${DRAM_COMB}
+	cd ..  &&  ${SRAM_COMB}
+mem_cleanRam:
+	cd ..  &&  ${MEM_RMPY}
+mem_clean:
+	cd ..  &&  ${MEM_CLEAN}
+mem_init:
+	cd ..  &&  ${MEM_INIT}
+mem_test:
+	cd ..  &&  ${MEM_TEST}
+mem_func:
+	cd ..  &&  ${MEM_FUNC}
+LUT_init:
+	cd ..  &&  ${LUT_INIT}

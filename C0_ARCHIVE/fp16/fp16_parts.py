@@ -1,0 +1,81 @@
+import numpy as np
+
+BIAS_F16 = 15
+
+###################################################
+###                TEST Program                 ###
+###################################################
+def f16_parts(x):
+    """
+    RETURNs
+      sign_bit: 0/1
+      exp_field: 0 ~ 31 (exponent)
+      frac_field: 0 ~ 1023 (mantissa)
+      exp_unbiased: exponent without bias; inf/nan return None
+      mantissa: normal = 1 + frac/2^10, subnormal = frac/2^10
+      kind: 'zero'/'subnormal'/'normal'/'inf'/'nan'
+    """
+    a = np.asarray(x, dtype=np.float16)
+    bits = a.view(np.uint16)
+
+    sign_bit   = (bits >> 15) & 0x1
+    exp_field  = (bits >> 10) & 0x1F
+    frac_field = bits & 0x3FF
+
+    # unbiased exponent / mantissa
+    exp_unbiased = np.full(exp_field.shape, None, dtype=object)
+    mantissa     = np.zeros(exp_field.shape, dtype=np.float64)
+    kind         = np.empty(exp_field.shape, dtype=object)
+
+    is_exp0  = (exp_field == 0)
+    is_exp31 = (exp_field == 31)
+    is_frac0 = (frac_field == 0)
+
+    # zero
+    m = is_exp0 & is_frac0
+    kind[m] = "zero"
+    exp_unbiased[m] = 1 - BIAS_F16  
+    mantissa[m] = 0.0
+
+    # subnormal
+    m = is_exp0 & (~is_frac0)
+    kind[m] = "subnormal"
+    exp_unbiased[m] = 1 - BIAS_F16
+    mantissa[m] = frac_field[m] / 2**10
+
+    # inf
+    m = is_exp31 & is_frac0
+    kind[m] = "inf"
+    exp_unbiased[m] = None
+    mantissa[m] = np.inf
+
+    # nan
+    m = is_exp31 & (~is_frac0)
+    kind[m] = "nan"
+    exp_unbiased[m] = None
+    mantissa[m] = np.nan
+
+    # normal
+    m = (~is_exp0) & (~is_exp31)
+    kind[m] = "normal"
+    exp_unbiased[m] = (exp_field[m].astype(np.int32) - BIAS_F16)
+    mantissa[m] = 1.0 + frac_field[m] / 2**10
+
+    if a.shape == ():
+        return (int(sign_bit), int(exp_field), int(frac_field), exp_unbiased.item(), float(mantissa), kind.item())
+    return sign_bit, exp_field, frac_field, exp_unbiased, mantissa, kind
+
+
+###################################################
+###                TEST Program                 ###
+###################################################
+if __name__ == '__main__':
+    
+    num = 10.5
+    x = np.float16(num)
+    sign, exp_part, frac_part, exp, frac_float, kind = f16_parts(x)
+
+    print(f"fp16: {sign} | {exp_part} | {frac_part}")
+    print(f"unbias exp: {exp}")
+    print(f"frac_float: {frac_float}")
+    print(f"kind: {kind}")
